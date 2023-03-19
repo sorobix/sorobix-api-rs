@@ -7,10 +7,11 @@ mod services;
 
 use axum::{
     routing::{get, post},
-    Router,
+    Json, Router,
 };
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
     handlers::account_handler::generate_new_account, models::router_state::RouterState,
@@ -19,22 +20,19 @@ use crate::{
 
 #[tokio::main]
 async fn main() {
-    // initialize tracing
     tracing_subscriber::fmt::init();
     let application_service = ApplicationService::new();
     let application_state = RouterState {
         application_service,
     };
     let state = Arc::new(application_state);
+    let cors = CorsLayer::new().allow_origin(Any);
     let app = Router::new()
-        // `GET /` goes to `root`
         .route("/", get(root))
-        // `POST /users` goes to `create_user`
         .route("/account", post(generate_new_account))
-        .with_state(state);
+        .with_state(state)
+        .layer(cors);
 
-    // run our app with hyper
-    // `axum::Server` is a re-export of `hyper::Server`
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
@@ -43,6 +41,10 @@ async fn main() {
         .unwrap();
 }
 
-async fn root() -> &'static str {
-    "Hello, World!"
+async fn root() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "status": true,
+        "name": "sorobix-api-rs",
+        "author": "Hemanth Krishna <@DarthBenro008>"
+    }))
 }
