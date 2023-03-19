@@ -10,7 +10,7 @@ pub struct Response {
 }
 
 #[derive(Serialize)]
-enum ResponseEnum {
+pub enum ResponseEnum {
     GenerateAccountResponse(generate_account::GenerateAccountResponse),
     String(String),
 }

@@ -2,6 +2,7 @@ extern crate ed25519_dalek;
 extern crate rand;
 
 mod models;
+mod services;
 
 use axum::{
     http::StatusCode,

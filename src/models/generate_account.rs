@@ -12,3 +12,19 @@ pub struct GenerateAccountResponse {
     private_key: String,
     public_key: String,
 }
+
+pub struct Account {
+    public: String,
+    private: String,
+    result: Option<serde_json::Value>,
+}
+
+impl Account {
+    pub fn new(public: String, private: String, result: Option<serde_json::Value>) -> Account {
+        Account {
+            public,
+            private,
+            result,
+        }
+    }
+}
