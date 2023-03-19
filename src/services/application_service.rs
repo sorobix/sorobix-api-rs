@@ -1,7 +1,7 @@
 use super::account_service::AccountService;
 
 pub struct ApplicationService {
-    account_service: AccountService,
+    pub account_service: AccountService,
 }
 
 impl ApplicationService {
@@ -9,5 +9,8 @@ impl ApplicationService {
         ApplicationService {
             account_service: AccountService {},
         }
+    }
+    pub fn get_account_service(&self) -> &AccountService {
+        &self.account_service
     }
 }

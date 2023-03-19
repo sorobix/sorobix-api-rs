@@ -5,7 +5,7 @@ use stellar_strkey::ed25519::{PrivateKey, PublicKey};
 pub struct AccountService {}
 
 impl AccountService {
-    pub async fn generate_new_account() -> Result<Account, reqwest::Error> {
+    pub async fn generate_new_account(&self) -> Result<Account, reqwest::Error> {
         let mut cspng = OsRng {};
         let kp: Keypair = Keypair::generate(&mut cspng);
         let private = PrivateKey(kp.secret.to_bytes());
