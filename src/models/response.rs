@@ -1,7 +1,7 @@
 use serde::Serialize;
 
+pub use super::contract;
 pub use super::generate_account;
-
 #[derive(Serialize)]
 pub struct Response {
     status: bool,
@@ -13,6 +13,7 @@ pub struct Response {
 pub enum ResponseEnum {
     GenerateAccountResponse(generate_account::GenerateAccountResponse),
     String(String),
+    CompileContractResponse(contract::CompileContractResponse),
 }
 
 impl Response {

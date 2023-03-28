@@ -16,6 +16,7 @@ use tower_http::cors::{Any, CorsLayer};
 use crate::{
     handlers::account_handler::generate_new_account, models::router_state::RouterState,
     services::application_service::ApplicationService,
+    handlers::contract_handler::compile_contract
 };
 
 #[tokio::main]
@@ -30,6 +31,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/account", post(generate_new_account))
+        .route("/compile", post(compile_contract))
         .with_state(state)
         .layer(cors);
 
