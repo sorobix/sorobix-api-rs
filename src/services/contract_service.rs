@@ -34,3 +34,10 @@ pub fn get_to_root_dir(path_from_root_dir: &str) -> io::Result<PathBuf> {
     dir.push(path_from_root_dir);
     Ok(dir)
 }
+
+pub fn fetch_error_string_during_deployment(input_string: &str) -> &str {
+    match input_string.find("\nerror: ") {
+        Some(index) => &input_string[index + "\nerror: ".len()..],
+        None => "",
+    }
+}

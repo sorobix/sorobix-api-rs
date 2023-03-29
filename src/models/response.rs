@@ -14,6 +14,7 @@ pub enum ResponseEnum {
     GenerateAccountResponse(generate_account::GenerateAccountResponse),
     String(String),
     CompileContractResponse(contract::CompileContractResponse),
+    DeployContractResponse(contract::DeployContractResponse),
 }
 
 impl Response {

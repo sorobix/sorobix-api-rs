@@ -14,9 +14,9 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
-    handlers::account_handler::generate_new_account, models::router_state::RouterState,
+    handlers::account_handler::generate_new_account, handlers::contract_handler::compile_contract,
+    handlers::contract_handler::deploy_contract, models::router_state::RouterState,
     services::application_service::ApplicationService,
-    handlers::contract_handler::compile_contract
 };
 
 #[tokio::main]
@@ -32,6 +32,7 @@ async fn main() {
         .route("/", get(root))
         .route("/account", post(generate_new_account))
         .route("/compile", post(compile_contract))
+        .route("/deploy", post(deploy_contract))
         .with_state(state)
         .layer(cors);
 
