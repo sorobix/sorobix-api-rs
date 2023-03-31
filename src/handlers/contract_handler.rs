@@ -5,7 +5,8 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 use crate::models::contract::{
-    CompileContractResponse, DeployContractRequest, DeployContractResponse,
+    CompileContractResponse, DeployContractRequest, DeployContractResponse, InvokeContractRequest,
+    InvokeContractResponse,
 };
 use crate::models::{
     contract::CompileContractRequest,
@@ -108,3 +109,83 @@ pub async fn deploy_contract(
         }
     }
 }
+
+pub async fn invoke_contract(
+    Json(payload): Json<InvokeContractRequest>,
+) -> (StatusCode, Json<Response>) {
+    let contract_id: &str = &payload.contract_id.as_str();
+    let contract_function: &str = &payload.contract_function.as_str();
+    let secret_key: &str = &payload.secret_key.as_str();
+    let contract_args: &Vec<String> = &payload.contract_arguments;
+
+    let mut soroban_cmd = Command::new("soroban");
+
+    soroban_cmd
+        .arg("contract")
+        .arg("invoke")
+        .arg("--id")
+        .arg(contract_id)
+        .arg("--secret-key")
+        .arg(secret_key)
+        .arg("--network-passphrase")
+        .arg("Test SDF Future Network ; October 2022")
+        .arg("--rpc-url")
+        .arg("https://horizon-futurenet.stellar.cash:443/soroban/rpc")
+        .arg("--fn")
+        .arg(contract_function)
+        .arg("--");
+
+    for (index, arg) in contract_args.iter().enumerate() {
+        if index % 2 == 0 {
+            soroban_cmd.arg(format!("--{}", arg));
+        } else {
+            soroban_cmd.arg(arg);
+        }
+    }
+
+    let output = soroban_cmd.output().expect("failed to execute process");
+
+    let invokation_stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let invokation_stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+    match output.status.code() {
+        Some(0) => {
+            let invokation_response = InvokeContractResponse {
+                result: invokation_stdout,
+            };
+            let response = Response::success_response(
+                "contract invokation successful".to_string(),
+                ResponseEnum::InvokeContractResponse(invokation_response),
+            );
+            (StatusCode::OK, Json(response))
+        }
+        Some(_) => {
+            let invokation_response = InvokeContractResponse {
+                result: invokation_stderr,
+            };
+            let response = Response::success_response(
+                "contract invokation failed".to_string(),
+                ResponseEnum::InvokeContractResponse(invokation_response),
+            );
+            (StatusCode::BAD_REQUEST, Json(response))
+        }
+        None => {
+            let response = Response::fail_response(invokation_stderr);
+            (StatusCode::BAD_REQUEST, Json(response))
+        }
+    }
+}
+
+// pub fn add_args_in_soroban<'a>(
+//     command: &'a mut Command,
+//     contract_args: &'a Vec<String>,
+// ) -> &'a mut Command {
+//     for (index, arg) in contract_args.iter().enumerate() {
+//         if index % 2 == 0 {
+//             command.arg(&format!(" --{} ", arg));
+//         } else {
+//             command.arg(arg);
+//         }
+//     }
+//     return command;
+// }

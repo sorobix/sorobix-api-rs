@@ -15,6 +15,7 @@ pub enum ResponseEnum {
     String(String),
     CompileContractResponse(contract::CompileContractResponse),
     DeployContractResponse(contract::DeployContractResponse),
+    InvokeContractResponse(contract::InvokeContractResponse),
 }
 
 impl Response {
