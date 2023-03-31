@@ -49,6 +49,6 @@ async fn root() -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "status": true,
         "name": "sorobix-api-rs",
-        "author": "Hemanth Krishna <@DarthBenro008>"
+        "author": "Team Sorobix <sorobix@gmail.com>"
     }))
 }
