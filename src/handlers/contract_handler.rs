@@ -175,17 +175,3 @@ pub async fn invoke_contract(
         }
     }
 }
-
-// pub fn add_args_in_soroban<'a>(
-//     command: &'a mut Command,
-//     contract_args: &'a Vec<String>,
-// ) -> &'a mut Command {
-//     for (index, arg) in contract_args.iter().enumerate() {
-//         if index % 2 == 0 {
-//             command.arg(&format!(" --{} ", arg));
-//         } else {
-//             command.arg(arg);
-//         }
-//     }
-//     return command;
-// }

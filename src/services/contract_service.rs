@@ -1,14 +1,3 @@
-// use std::{env, io, path::PathBuf};
-
-// pub fn get_to_root_dir(path_from_root_dir: &str) -> io::Result<PathBuf> {
-//     let mut dir: PathBuf = env::current_exe()?;
-//     dir.pop();
-//     dir.pop();
-//     dir.pop();
-//     dir.push(path_from_root_dir);
-//     Ok(dir)
-// }
-
 use std::env;
 use std::io;
 use std::path::PathBuf;
