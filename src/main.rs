@@ -14,9 +14,10 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
-    handlers::account_handler::generate_new_account, handlers::contract_handler::compile_contract,
-    handlers::contract_handler::deploy_contract, handlers::contract_handler::invoke_contract,
-    models::router_state::RouterState, services::application_service::ApplicationService,
+    handlers::account_handler::generate_new_account,
+    handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract},
+    models::router_state::RouterState,
+    services::application_service::ApplicationService,
 };
 
 #[tokio::main]
