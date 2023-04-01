@@ -23,7 +23,6 @@ impl ContractService {
             .output()
             .expect("failed to execute process");
 
-        let compilation_output: Cow<'_, str> = String::from_utf8_lossy(&output.stderr);
         Ok(CompileContract::new(
             output.status.code(),
             String::from_utf8_lossy(&output.stdout).to_string(),
