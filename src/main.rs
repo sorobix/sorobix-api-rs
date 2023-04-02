@@ -14,7 +14,9 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::{
-    handlers::account_handler::generate_new_account, models::router_state::RouterState,
+    handlers::account_handler::generate_new_account,
+    handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract},
+    models::router_state::RouterState,
     services::application_service::ApplicationService,
 };
 
@@ -30,6 +32,9 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/account", post(generate_new_account))
+        .route("/compile", post(compile_contract))
+        .route("/deploy", post(deploy_contract))
+        .route("/invoke", post(invoke_contract))
         .with_state(state)
         .layer(cors);
 
@@ -45,6 +50,6 @@ async fn root() -> Json<serde_json::Value> {
     Json(serde_json::json!({
         "status": true,
         "name": "sorobix-api-rs",
-        "author": "Hemanth Krishna <@DarthBenro008>"
+        "author": "Team Sorobix <sorobix@gmail.com>"
     }))
 }

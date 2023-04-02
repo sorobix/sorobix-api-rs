@@ -1,0 +1,642 @@
+{
+	"info": {
+		"_postman_id": "1db07f2e-a781-4c46-8ac6-55663f9e5555",
+		"name": "Sorobix-API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11026000"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{host}}/",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Health Check",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "83"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 12:27:44 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"author\": \"Team Sorobix <sorobix@gmail.com>\",\n    \"name\": \"sorobix-api-rs\",\n    \"status\": true\n}"
+				}
+			]
+		},
+		{
+			"name": "Create Account",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\":\"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{host}}/account",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"account"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Create Account",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\":\"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{host}}/account",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"account"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "4000"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 12:29:11 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"account generated succesfully!\",\n    \"data\": {\n        \"GenerateAccountResponse\": {\n            \"username\": \"\",\n            \"res\": {\n                \"_links\": {\n                    \"account\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/accounts/GBMXQMWMV3VNHVGTYCF45YVJE55V3M5U4OT2LHUGBR6S6MOD3T47P2L7\"\n                    },\n                    \"effects\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions/7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7/effects{?cursor,limit,order}\",\n                        \"templated\": true\n                    },\n                    \"ledger\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/ledgers/718342\"\n                    },\n                    \"operations\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions/7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7/operations{?cursor,limit,order}\",\n                        \"templated\": true\n                    },\n                    \"precedes\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions?order=asc&cursor=3085255397347328\"\n                    },\n                    \"self\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions/7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7\"\n                    },\n                    \"succeeds\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions?order=desc&cursor=3085255397347328\"\n                    },\n                    \"transaction\": {\n                        \"href\": \"https://horizon-futurenet.stellar.org/transactions/7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7\"\n                    }\n                },\n                \"created_at\": \"2023-04-01T12:29:09Z\",\n                \"envelope_xdr\": \"AAAAAgAAAABZeDLMrurT1NPAi87iqSd7XbO046elnoYMfS8xw9z59wAPQkAAAAE3AAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAABAAAAABB90WssODNIgi6BHveqzxTRmIpvAFRyVNM+Hm2GVuCcAAAAAAAAAAAta26NZefkuG199zOknXrp4JORNBoKbaww5v4au6jj0AAAABdIdugAAAAAAAAAAALD3Pn3AAAAQAsuFsmASlDP1nnYWfyyXl2jsKdMGylraD5GavcI8xAV+EryKHtLhcio6WraWgX7IDcoMpMT4DXJS39X2N+6owWGVuCcAAAAQDw69ZJrNnqu9XcfSMayh3HD3aLuQ98URkrColJkenWppoolojV5jD42OBCzgrJ83biKtqkLEbE+yQnMN50acA8=\",\n                \"fee_account\": \"GBMXQMWMV3VNHVGTYCF45YVJE55V3M5U4OT2LHUGBR6S6MOD3T47P2L7\",\n                \"fee_charged\": \"100\",\n                \"fee_meta_xdr\": \"AAAAAgAAAAMAAAE3AAAAAAAAAABZeDLMrurT1NPAi87iqSd7XbO046elnoYMfS8xw9z59wAAAAA8M2CAAAABNwAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAEACvYGAAAAAAAAAABZeDLMrurT1NPAi87iqSd7XbO046elnoYMfS8xw9z59wAAAAA8M2AcAAABNwAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAA==\",\n                \"hash\": \"7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7\",\n                \"id\": \"7ce20be1df5331b9c902aec432ba7048d5192dae415e953375a260c494f423c7\",\n                \"ledger\": 718342,\n                \"max_fee\": \"1000000\",\n                \"memo_type\": \"none\",\n                \"operation_count\": 1,\n                \"paging_token\": \"3085255397347328\",\n                \"preconditions\": {\n                    \"timebounds\": {\n                        \"min_time\": \"0\"\n                    }\n                },\n                \"result_meta_xdr\": \"AAAAAwAAAAIAAAADAAr2BgAAAAAAAAAAWXgyzK7q09TTwIvO4qkne12ztOOnpZ6GDH0vMcPc+fcAAAAAPDNgHAAAATcAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAABAAr2BgAAAAAAAAAAWXgyzK7q09TTwIvO4qkne12ztOOnpZ6GDH0vMcPc+fcAAAAAPDNgHAAAATcAAAABAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAwAAAAAACvYGAAAAAGQoI5UAAAAAAAAAAQAAAAMAAAADAAr2BAAAAAAAAAAAEH3Rayw4M0iCLoEe96rPFNGYim8AVHJU0z4ebYZW4JwAIw/gP6XiwAAAAKoAAABkAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAFBAAAAAGPukn4AAAAAAAAAAQAK9gYAAAAAAAAAABB90WssODNIgi6BHveqzxTRmIpvAFRyVNM+Hm2GVuCcACMPyPcu+sAAAACqAAAAZAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAMAAAAAAAABQQAAAABj7pJ+AAAAAAAAAAAACvYGAAAAAAAAAAAta26NZefkuG199zOknXrp4JORNBoKbaww5v4au6jj0AAAABdIdugAAAr2BgAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAABkAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAWNMZWTVzkRxAonqfx57TW1JUuMDN4u+XiyqJhomgwZTLvEh1Deu4U1CTs96viKx/TP+HQlV2pY3iusdUrNtGFmXj3HzHvB55kawwOErXjqZR4GOLNLbAq7g2LeInkc4A\",\n                \"result_xdr\": \"AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAA=\",\n                \"signatures\": [\n                    \"Cy4WyYBKUM/WedhZ/LJeXaOwp0wbKWtoPkZq9wjzEBX4SvIoe0uFyKjpatpaBfsgNygykxPgNclLf1fY37qjBQ==\",\n                    \"PDr1kms2eq71dx9IxrKHccPdou5D3xRGSsKiUmR6dammiiWiNXmMPjY4ELOCsnzduIq2qQsRsT7JCcw3nRpwDw==\"\n                ],\n                \"source_account\": \"GBMXQMWMV3VNHVGTYCF45YVJE55V3M5U4OT2LHUGBR6S6MOD3T47P2L7\",\n                \"source_account_sequence\": \"1335734829057\",\n                \"successful\": true,\n                \"valid_after\": \"1970-01-01T00:00:00Z\"\n            },\n            \"private_key\": \"SBHXXZR6LFWJMC2NDT4ZBH57DFCQW2CAUUR366B3KYPNOYCM3FN7ULEQ\",\n            \"public_key\": \"GAWWW3UNMXT6JODNPX3THJE5PLU6BE4RGQNAU3NMGDTP4GV3VDR5BOMW\"\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Compile Contract",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/compile",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"compile"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Compile Contract Fail",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/compile",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"compile"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "3711"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 11:10:10 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"compilation failed!\",\n    \"data\": {\n        \"CompileContractResponse\": {\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling strsim v0.10.0\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling itertools v0.10.5\\n   Compiling num-traits v0.2.15\\n   Compiling indexmap v1.9.3\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling syn v2.0.12\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\nerror[E0412]: cannot find type `Contract` in this scope\\n --> src/lib.rs:1:117\\n  |\\n1 | ..., Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symb...\\n  |                    -------------------                      ^^^^^^^^ help: a struct with a similar name exists: `Contrac`\\n  |                    |\\n  |                    similarly named struct `Contrac` defined here\\n\\nerror[E0412]: cannot find type `Contract` in module `super`\\n --> src/lib.rs:1:117\\n  |\\n1 | ..., Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symb...\\n  |                    -------------------                      ^^^^^^^^ help: a struct with a similar name exists: `Contrac`\\n  |                    |\\n  |                    similarly named struct `Contrac` defined here\\n\\nerror[E0433]: failed to resolve: use of undeclared type `Contract`\\n --> src/lib.rs:1:117\\n  |\\n1 | ...truct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symbol!(\\\"Hello\\\"), to] }}\\n  |                                        ^^^^^^^^\\n  |                                        |\\n  |                                        use of undeclared type `Contract`\\n  |                                        help: a struct with a similar name exists: `Contrac`\\n\\nSome errors have detailed explanations: E0412, E0433.\\nFor more information about an error, try `rustc --explain E0412`.\\nerror: could not compile `sorobix_temp` (lib) due to 3 previous errors\\n\"\n        }\n    }\n}"
+				},
+				{
+					"name": "Compile Contract Suc",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/compile",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"compile"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "2143"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 11:41:55 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"compilation successful!\",\n    \"data\": {\n        \"CompileContractResponse\": {\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling strsim v0.10.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling version_check v0.9.4\\n   Compiling typenum v1.16.0\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling indexmap v1.9.3\\n   Compiling num-traits v0.2.15\\n   Compiling itertools v0.10.5\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling hashbrown v0.12.3\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling cpufeatures v0.2.6\\n   Compiling cfg-if v1.0.0\\n   Compiling syn v2.0.12\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling block-buffer v0.10.4\\n   Compiling crypto-common v0.1.6\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling serde_with v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 37.85s\\n\"\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Deploy Contract",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/deploy",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"deploy"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Deploy Contract Suc",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/deploy",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"deploy"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "2244"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 11:43:11 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"deployment successful!\",\n    \"data\": {\n        \"DeployContractResponse\": {\n            \"contract_hash\": \"85d336a3ddccc981d1b823660a7af9b642f3c3a0c4c1c228ca7b394eac0d2fe1\\n\",\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling strsim v0.10.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling prettyplease v0.1.25\\n   Compiling num-traits v0.2.15\\n   Compiling itertools v0.10.5\\n   Compiling indexmap v1.9.3\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling hashbrown v0.12.3\\n   Compiling syn v2.0.12\\n   Compiling num-bigint v0.4.3\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 34.04s\\nsuccess\\nsuccess\\n\"\n        }\n    }\n}"
+				},
+				{
+					"name": "Deploy Contract Fail",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/deploy",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"deploy"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "2210"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 11:44:29 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"deployment failed: the strkey is invalid\\n\",\n    \"data\": {\n        \"DeployContractResponse\": {\n            \"contract_hash\": \"\",\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling syn v1.0.109\\n   Compiling autocfg v1.1.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling strsim v0.10.0\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling itertools v0.10.5\\n   Compiling indexmap v1.9.3\\n   Compiling num-traits v0.2.15\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling syn v2.0.12\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling static_assertions v1.1.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 45.55s\\nerror: the strkey is invalid\\n\"\n        }\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Invoke Contract",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:3000/invoke",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"invoke"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Invoke Contract Suc",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/invoke",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"invoke"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "129"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 12:12:12 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"contract invokation successful\",\n    \"data\": {\n        \"InvokeContractResponse\": {\n            \"result\": \"[\\\"Hello\\\",\\\"world\\\"]\\n\"\n        }\n    }\n}"
+				},
+				{
+					"name": "Invoke Contract Fail",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"too\",\"world\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/invoke",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"invoke"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "365"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "date",
+							"value": "Sat, 01 Apr 2023 12:17:19 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": true,\n    \"message\": \"contract invokation failed\",\n    \"data\": {\n        \"InvokeContractResponse\": {\n            \"result\": \"error: Found argument '--too' which wasn't expected, or isn't valid in this context\\n\\n\\tDid you mean '--to'?\\n\\n\\tIf you tried to supply `--too` as a value rather than a flag, use `-- --too`\\n\\nUSAGE:\\n    hello --to <Symbol>\\n\\nFor more information try --help\\n\"\n        }\n    }\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "host",
+			"value": "http://localhost:5000"
+		}
+	]
+}
