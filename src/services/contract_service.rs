@@ -102,7 +102,11 @@ impl ContractService {
         let output = soroban_cmd.output().expect("failed to execute process");
 
         let invokation_stdout = String::from_utf8_lossy(&output.stdout).to_string();
-        let invokation_stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let mut invokation_stderr = String::from_utf8_lossy(&output.stderr).to_string();
+
+        if invokation_stderr == "success\n" {
+            invokation_stderr = "".to_string();
+        }
 
         Ok(InvokeContract::new(invokation_stdout, invokation_stderr))
     }
