@@ -22,6 +22,7 @@ use crate::{
 
 #[tokio::main]
 async fn main() {
+    println!("Sorobix API RS Booted");
     tracing_subscriber::fmt::init();
     let application_service = ApplicationService::new();
     let application_state = RouterState {
@@ -38,7 +39,7 @@ async fn main() {
         .with_state(state)
         .layer(cors);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
