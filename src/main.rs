@@ -29,15 +29,18 @@ async fn main() {
         application_service,
     };
     let state = Arc::new(application_state);
-    let cors = CorsLayer::new().allow_origin(Any);
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_headers(Any)
+        .allow_methods(Any);
     let app = Router::new()
+        .layer(cors)
         .route("/", get(root))
         .route("/account", post(generate_new_account))
         .route("/compile", post(compile_contract))
         .route("/deploy", post(deploy_contract))
         .route("/invoke", post(invoke_contract))
-        .with_state(state)
-        .layer(cors);
+        .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::debug!("listening on {}", addr);
