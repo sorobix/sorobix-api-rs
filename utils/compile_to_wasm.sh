@@ -11,12 +11,8 @@ version = \"0.1.0\"
 edition = \"2021\"
 [lib]
 crate-type = [\"cdylib\"]
-[features]
-testutils = [\"soroban-sdk/testutils\"]
 [dependencies]
-soroban-sdk = \"0.6.0\"
-[dev_dependencies]
-soroban-sdk = { version = \"0.6.0\", features = [\"testutils\"] }
+soroban-sdk = { version = \"0.7.0\"}
 [profile.release]
 opt-level = \"z\"
 overflow-checks = true
@@ -32,19 +28,5 @@ debug-assertions = true
 """ > Cargo.toml
 
 echo $1 > src/lib.rs
-
-# echo """
-# #![no_std]
-# use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec};
-
-# pub struct Contract;
-
-# #[contractimpl]
-# impl Contract {
-#     pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {
-#         vec![&env, symbol!(\"Hello\"), to]
-#     }
-# }
-# """ > src/lib.rs
 
 cargo build --target wasm32-unknown-unknown --release

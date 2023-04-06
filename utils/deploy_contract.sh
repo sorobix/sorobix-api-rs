@@ -11,12 +11,8 @@ version = \"0.1.0\"
 edition = \"2021\"
 [lib]
 crate-type = [\"cdylib\"]
-[features]
-testutils = [\"soroban-sdk/testutils\"]
 [dependencies]
-soroban-sdk = \"0.6.0\"
-[dev_dependencies]
-soroban-sdk = { version = \"0.6.0\", features = [\"testutils\"] }
+soroban-sdk = { version = \"0.7.0\"}
 [profile.release]
 opt-level = \"z\"
 overflow-checks = true
@@ -37,6 +33,6 @@ cargo build --target wasm32-unknown-unknown --release
 
 soroban contract deploy \
     --wasm target/wasm32-unknown-unknown/release/sorobix_temp.wasm \
-    --secret-key $2 \
-    --rpc-url https://horizon-futurenet.stellar.cash:443/soroban/rpc \
+    --source $2 \
+    --rpc-url https://rpc-futurenet.stellar.org:443 \
     --network-passphrase 'Test SDF Future Network ; October 2022'
