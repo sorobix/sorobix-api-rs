@@ -31,17 +31,15 @@ pub async fn compile_contract(
                 (StatusCode::OK, Json(response))
             }
             Some(_) => {
-                let compilation_response = CompileContractResponse {
-                    compiler_output: data.compiler_stderr,
-                };
-                let response = Response::success_response(
-                    "compilation failed!".to_string(),
-                    ResponseEnum::CompileContractResponse(compilation_response),
+                let response = Response::fail_response(
+                    "compilation failed: ".to_string() + &data.compiler_stderr,
                 );
                 (StatusCode::BAD_REQUEST, Json(response))
             }
             None => {
-                let response = Response::fail_response(data.compiler_stderr);
+                let response = Response::fail_response(
+                    "compilation failed: ".to_string() + &data.compiler_stderr,
+                );
                 (StatusCode::BAD_REQUEST, Json(response))
             }
         },
@@ -79,13 +77,8 @@ pub async fn deploy_contract(
                 return (StatusCode::OK, Json(response));
             }
             false => {
-                let compilation_response = DeployContractResponse {
-                    contract_hash: "".to_string(),
-                    compiler_output: data.compiler_stderr,
-                };
-                let response = Response::success_response(
+                let response = Response::fail_response(
                     "deployment failed: ".to_string() + &data.error_message,
-                    ResponseEnum::DeployContractResponse(compilation_response),
                 );
                 (StatusCode::BAD_REQUEST, Json(response))
             }
@@ -124,12 +117,8 @@ pub async fn invoke_contract(
                 );
                 return (StatusCode::OK, Json(response));
             } else {
-                let invokation_response = InvokeContractResponse {
-                    result: data.error_message,
-                };
-                let response = Response::success_response(
-                    "contract invokation failed".to_string(),
-                    ResponseEnum::InvokeContractResponse(invokation_response),
+                let response = Response::fail_response(
+                    "contract invokation failed".to_string() + &data.error_message,
                 );
                 return (StatusCode::BAD_REQUEST, Json(response));
             }

@@ -81,15 +81,14 @@ impl ContractService {
             .arg("invoke")
             .arg("--id")
             .arg(contract_id)
-            .arg("--secret-key")
+            .arg("--source")
             .arg(secret_key)
+            .arg("--rpc-url")
+            .arg("https://rpc-futurenet.stellar.org:443")
             .arg("--network-passphrase")
             .arg("Test SDF Future Network ; October 2022")
-            .arg("--rpc-url")
-            .arg("https://horizon-futurenet.stellar.cash:443/soroban/rpc")
-            .arg("--fn")
-            .arg(contract_function)
-            .arg("--");
+            .arg("--")
+            .arg(contract_function);
 
         for (index, arg) in contract_args.iter().enumerate() {
             if index % 2 == 0 {
@@ -104,7 +103,7 @@ impl ContractService {
         let invokation_stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let mut invokation_stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
-        if invokation_stderr == "success\n" {
+        if invokation_stderr == "SUCCESS\n" {
             invokation_stderr = "".to_string();
         }
 

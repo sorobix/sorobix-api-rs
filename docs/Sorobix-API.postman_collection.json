@@ -12,11 +12,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{host}}/",
+					"raw": "{{host}}/api/",
 					"host": [
 						"{{host}}"
 					],
 					"path": [
+						"api",
 						""
 					]
 				}
@@ -90,11 +91,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{host}}/account",
+					"raw": "{{host}}/api/account",
 					"host": [
 						"{{host}}"
 					],
 					"path": [
+						"api",
 						"account"
 					]
 				}
@@ -169,7 +171,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\"\n}",
+					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {vec![&env, Symbol::short(\\\"Hello\\\"), to]}}\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -177,78 +179,18 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/compile",
+					"raw": "localhost:3000/api/compile",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
+						"api",
 						"compile"
 					]
 				}
 			},
 			"response": [
-				{
-					"name": "Compile Contract Fail",
-					"originalRequest": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "localhost:3000/compile",
-							"host": [
-								"localhost"
-							],
-							"port": "3000",
-							"path": [
-								"compile"
-							]
-						}
-					},
-					"status": "Bad Request",
-					"code": 400,
-					"_postman_previewlanguage": "json",
-					"header": [
-						{
-							"key": "content-type",
-							"value": "application/json"
-						},
-						{
-							"key": "content-length",
-							"value": "3711"
-						},
-						{
-							"key": "access-control-allow-origin",
-							"value": "*"
-						},
-						{
-							"key": "vary",
-							"value": "origin"
-						},
-						{
-							"key": "vary",
-							"value": "access-control-request-method"
-						},
-						{
-							"key": "vary",
-							"value": "access-control-request-headers"
-						},
-						{
-							"key": "date",
-							"value": "Sat, 01 Apr 2023 11:10:10 GMT"
-						}
-					],
-					"cookie": [],
-					"body": "{\n    \"status\": true,\n    \"message\": \"compilation failed!\",\n    \"data\": {\n        \"CompileContractResponse\": {\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling strsim v0.10.0\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling itertools v0.10.5\\n   Compiling num-traits v0.2.15\\n   Compiling indexmap v1.9.3\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling syn v2.0.12\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\nerror[E0412]: cannot find type `Contract` in this scope\\n --> src/lib.rs:1:117\\n  |\\n1 | ..., Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symb...\\n  |                    -------------------                      ^^^^^^^^ help: a struct with a similar name exists: `Contrac`\\n  |                    |\\n  |                    similarly named struct `Contrac` defined here\\n\\nerror[E0412]: cannot find type `Contract` in module `super`\\n --> src/lib.rs:1:117\\n  |\\n1 | ..., Symbol, Vec}; pub struct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symb...\\n  |                    -------------------                      ^^^^^^^^ help: a struct with a similar name exists: `Contrac`\\n  |                    |\\n  |                    similarly named struct `Contrac` defined here\\n\\nerror[E0433]: failed to resolve: use of undeclared type `Contract`\\n --> src/lib.rs:1:117\\n  |\\n1 | ...truct Contrac; #[contractimpl] impl Contract { pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> { vec![&env, symbol!(\\\"Hello\\\"), to] }}\\n  |                                        ^^^^^^^^\\n  |                                        |\\n  |                                        use of undeclared type `Contract`\\n  |                                        help: a struct with a similar name exists: `Contrac`\\n\\nSome errors have detailed explanations: E0412, E0433.\\nFor more information about an error, try `rustc --explain E0412`.\\nerror: could not compile `sorobix_temp` (lib) due to 3 previous errors\\n\"\n        }\n    }\n}"
-				},
 				{
 					"name": "Compile Contract Suc",
 					"originalRequest": {
@@ -309,6 +251,72 @@
 					],
 					"cookie": [],
 					"body": "{\n    \"status\": true,\n    \"message\": \"compilation successful!\",\n    \"data\": {\n        \"CompileContractResponse\": {\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling strsim v0.10.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling version_check v0.9.4\\n   Compiling typenum v1.16.0\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling indexmap v1.9.3\\n   Compiling num-traits v0.2.15\\n   Compiling itertools v0.10.5\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling hashbrown v0.12.3\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling cpufeatures v0.2.6\\n   Compiling cfg-if v1.0.0\\n   Compiling syn v2.0.12\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling block-buffer v0.10.4\\n   Compiling crypto-common v0.1.6\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling serde_with v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 37.85s\\n\"\n        }\n    }\n}"
+				},
+				{
+					"name": "Compile Contract Fail",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lib_file\":\"#![no_std] us soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {vec![&env, Symbol::short(\\\"Hello\\\"), to]}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:3000/api/compile",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"compile"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "application/json"
+						},
+						{
+							"key": "content-length",
+							"value": "2301"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "vary",
+							"value": "origin"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-method"
+						},
+						{
+							"key": "vary",
+							"value": "access-control-request-headers"
+						},
+						{
+							"key": "access-control-expose-headers",
+							"value": "*"
+						},
+						{
+							"key": "date",
+							"value": "Thu, 06 Apr 2023 20:32:18 GMT"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"status\": false,\n    \"message\": \"compilation failed! due to:      Created library `sorobix_temp` package\\n    Updating crates.io index\\n   Compiling proc-macro2 v1.0.56\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling syn v1.0.109\\n   Compiling autocfg v1.1.0\\n   Compiling fnv v1.0.7\\n   Compiling ident_case v1.0.1\\n   Compiling strsim v0.10.0\\n   Compiling version_check v0.9.4\\n   Compiling typenum v1.16.0\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling indexmap v1.9.3\\n   Compiling itertools v0.10.5\\n   Compiling num-traits v0.2.15\\n   Compiling generic-array v0.14.7\\n   Compiling num-integer v0.1.45\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling syn v2.0.13\\n   Compiling cpufeatures v0.2.6\\n   Compiling cfg-if v1.0.0\\n   Compiling ethnum v1.3.2\\n   Compiling wasmparser v0.88.0\\n   Compiling base64 v0.13.1\\n   Compiling static_assertions v1.1.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.2\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.2\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.15\\n   Compiling soroban-env-common v0.0.15\\n   Compiling soroban-spec v0.7.0\\n   Compiling soroban-env-macros v0.0.15\\n   Compiling soroban-env-guest v0.0.15\\n   Compiling soroban-sdk-macros v0.7.0\\n   Compiling soroban-sdk v0.7.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\nerror: expected one of `!` or `::`, found `soroban_sdk`\\n --> src/lib.rs:1:15\\n  |\\n1 | #![no_std] us soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract { pub fn hello(env: ...\\n  |               ^^^^^^^^^^^ expected one of `!` or `::`\\n\\nerror: could not compile `sorobix_temp` (lib) due to previous error\\n\",\n    \"data\": {\n        \"String\": \"failed request\"\n    }\n}"
 				}
 			]
 		},
@@ -319,7 +327,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+					"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {vec![&env, Symbol::short(\\\"Hello\\\"), to]}}\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP542\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -327,12 +335,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/deploy",
+					"raw": "localhost:3000/api/deploy",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
+						"api",
 						"deploy"
 					]
 				}
@@ -345,7 +354,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {vec![&env, Symbol::short(\\\"Hello\\\"), to]}}\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP542\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -353,12 +362,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/deploy",
+							"raw": "localhost:3000/api/deploy",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
+								"api",
 								"deploy"
 							]
 						}
@@ -373,7 +383,7 @@
 						},
 						{
 							"key": "content-length",
-							"value": "2244"
+							"value": "2272"
 						},
 						{
 							"key": "access-control-allow-origin",
@@ -392,12 +402,16 @@
 							"value": "access-control-request-headers"
 						},
 						{
+							"key": "access-control-expose-headers",
+							"value": "*"
+						},
+						{
 							"key": "date",
-							"value": "Sat, 01 Apr 2023 11:43:11 GMT"
+							"value": "Thu, 06 Apr 2023 19:51:45 GMT"
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"status\": true,\n    \"message\": \"deployment successful!\",\n    \"data\": {\n        \"DeployContractResponse\": {\n            \"contract_hash\": \"85d336a3ddccc981d1b823660a7af9b642f3c3a0c4c1c228ca7b394eac0d2fe1\\n\",\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling autocfg v1.1.0\\n   Compiling syn v1.0.109\\n   Compiling strsim v0.10.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling prettyplease v0.1.25\\n   Compiling num-traits v0.2.15\\n   Compiling itertools v0.10.5\\n   Compiling indexmap v1.9.3\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling hashbrown v0.12.3\\n   Compiling syn v2.0.12\\n   Compiling num-bigint v0.4.3\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling static_assertions v1.1.0\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 34.04s\\nsuccess\\nsuccess\\n\"\n        }\n    }\n}"
+					"body": "{\n    \"status\": true,\n    \"message\": \"deployment successful!\",\n    \"data\": {\n        \"DeployContractResponse\": {\n            \"contract_hash\": \"944fa5100ed16878444555a91245e347bb19ed410707a37c4c3ce9b8373006e0\\n\",\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.56\\n   Compiling quote v1.0.26\\n   Compiling unicode-ident v1.0.8\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling itoa v1.0.6\\n   Compiling ryu v1.0.13\\n   Compiling syn v1.0.109\\n   Compiling autocfg v1.1.0\\n   Compiling strsim v0.10.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling num-traits v0.2.15\\n   Compiling itertools v0.10.5\\n   Compiling indexmap v1.9.3\\n   Compiling generic-array v0.14.7\\n   Compiling syn v2.0.13\\n   Compiling num-integer v0.1.45\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling cpufeatures v0.2.6\\n   Compiling cfg-if v1.0.0\\n   Compiling wasmparser v0.88.0\\n   Compiling static_assertions v1.1.0\\n   Compiling ethnum v1.3.2\\n   Compiling base64 v0.13.1\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.2\\n   Compiling serde_with v2.3.2\\n   Compiling hex v0.4.3\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.15\\n   Compiling soroban-env-common v0.0.15\\n   Compiling soroban-spec v0.7.0\\n   Compiling soroban-env-macros v0.0.15\\n   Compiling soroban-env-guest v0.0.15\\n   Compiling soroban-sdk-macros v0.7.0\\n   Compiling soroban-sdk v0.7.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 51.76s\\nSUCCESS\\nSUCCESS\\n\"\n        }\n    }\n}"
 				},
 				{
 					"name": "Deploy Contract Fail",
@@ -406,7 +420,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, symbol, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) ->Vec<Symbol> {        vec![&env, symbol!(\\\"Hello\\\"), to]    }}\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\"\n}",
+							"raw": "{\n    \"lib_file\":\"#![no_std] use soroban_sdk::{contractimpl, vec, Env, Symbol, Vec}; pub struct Contract; #[contractimpl] impl Contract {    pub fn hello(env: Env, to: Symbol) -> Vec<Symbol> {vec![&env, Symbol::short(\\\"Hello\\\"), to]}}\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP511222\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -414,12 +428,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/deploy",
+							"raw": "localhost:3000/api/deploy",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
+								"api",
 								"deploy"
 							]
 						}
@@ -434,7 +449,7 @@
 						},
 						{
 							"key": "content-length",
-							"value": "2210"
+							"value": "160"
 						},
 						{
 							"key": "access-control-allow-origin",
@@ -453,12 +468,16 @@
 							"value": "access-control-request-headers"
 						},
 						{
+							"key": "access-control-expose-headers",
+							"value": "*"
+						},
+						{
 							"key": "date",
-							"value": "Sat, 01 Apr 2023 11:44:29 GMT"
+							"value": "Thu, 06 Apr 2023 20:38:16 GMT"
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"status\": true,\n    \"message\": \"deployment failed: the strkey is invalid\\n\",\n    \"data\": {\n        \"DeployContractResponse\": {\n            \"contract_hash\": \"\",\n            \"compiler_output\": \"     Created library `sorobix_temp` package\\n    Updating crates.io index\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n    Blocking waiting for file lock on package cache\\n   Compiling proc-macro2 v1.0.54\\n   Compiling unicode-ident v1.0.8\\n   Compiling quote v1.0.26\\n   Compiling serde_derive v1.0.159\\n   Compiling serde v1.0.159\\n   Compiling serde_json v1.0.95\\n   Compiling ryu v1.0.13\\n   Compiling itoa v1.0.6\\n   Compiling syn v1.0.109\\n   Compiling autocfg v1.1.0\\n   Compiling ident_case v1.0.1\\n   Compiling fnv v1.0.7\\n   Compiling strsim v0.10.0\\n   Compiling typenum v1.16.0\\n   Compiling version_check v0.9.4\\n   Compiling thiserror v1.0.40\\n   Compiling either v1.8.1\\n   Compiling hashbrown v0.12.3\\n   Compiling itertools v0.10.5\\n   Compiling indexmap v1.9.3\\n   Compiling num-traits v0.2.15\\n   Compiling num-integer v0.1.45\\n   Compiling generic-array v0.14.7\\n   Compiling syn v2.0.12\\n   Compiling prettyplease v0.1.25\\n   Compiling num-bigint v0.4.3\\n   Compiling cfg-if v1.0.0\\n   Compiling cpufeatures v0.2.6\\n   Compiling base64 v0.13.1\\n   Compiling wasmparser v0.88.0\\n   Compiling static_assertions v1.1.0\\n   Compiling crypto-common v0.1.6\\n   Compiling block-buffer v0.10.4\\n   Compiling digest v0.10.6\\n   Compiling sha2 v0.10.6\\n   Compiling thiserror-impl v1.0.40\\n   Compiling darling_core v0.14.4\\n   Compiling bytes-lit v0.0.4\\n   Compiling darling_macro v0.14.4\\n   Compiling darling v0.14.4\\n   Compiling serde_with_macros v2.3.1\\n   Compiling hex v0.4.3\\n   Compiling serde_with v2.3.1\\n   Compiling crate-git-revision v0.0.4\\n   Compiling stellar-xdr v0.0.14\\n   Compiling soroban-env-common v0.0.14\\n   Compiling soroban-spec v0.6.0\\n   Compiling soroban-env-macros v0.0.14\\n   Compiling soroban-env-guest v0.0.14\\n   Compiling soroban-sdk-macros v0.6.0\\n   Compiling soroban-sdk v0.6.0\\n   Compiling sorobix_temp v0.1.0 (/home/shubham/Desktop/sorobix-api-rs/sorobix_temp)\\n    Finished release [optimized] target(s) in 45.55s\\nerror: the strkey is invalid\\n\"\n        }\n    }\n}"
+					"body": "{\n    \"status\": false,\n    \"message\": \"deployment failed: Invalid address SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP511222\\n\",\n    \"data\": {\n        \"String\": \"failed request\"\n    }\n}"
 				}
 			]
 		},
@@ -469,7 +488,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
+					"raw": "{\n    \"contract_id\":\"944fa5100ed16878444555a91245e347bb19ed410707a37c4c3ce9b8373006e0\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP542\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -477,12 +496,13 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:3000/invoke",
+					"raw": "localhost:3000/api/invoke",
 					"host": [
 						"localhost"
 					],
 					"port": "3000",
 					"path": [
+						"api",
 						"invoke"
 					]
 				}
@@ -495,7 +515,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
+							"raw": "{\n    \"contract_id\":\"944fa5100ed16878444555a91245e347bb19ed410707a37c4c3ce9b8373006e0\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP542\",\n    \"contract_arguments\":[\"to\",\"world\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -503,12 +523,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/invoke",
+							"raw": "localhost:3000/api/invoke",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
+								"api",
 								"invoke"
 							]
 						}
@@ -542,8 +563,12 @@
 							"value": "access-control-request-headers"
 						},
 						{
+							"key": "access-control-expose-headers",
+							"value": "*"
+						},
+						{
 							"key": "date",
-							"value": "Sat, 01 Apr 2023 12:12:12 GMT"
+							"value": "Thu, 06 Apr 2023 20:38:41 GMT"
 						}
 					],
 					"cookie": [],
@@ -556,7 +581,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contract_id\":\"a96e51657e59c784d04f61ba23027d33551ee7d5a0a8116256e695c3157a5cda\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SBJT64KLJUWFU67Z4AQZFQIFYEFKPPI3K5HUUV6DLONU3IHKZHAKK2IV\",\n    \"contract_arguments\":[\"too\",\"world\"]\n}",
+							"raw": "{\n    \"contract_id\":\"944fa5100ed16878444555a91245e347bb19ed410707a37c4c3ce9b8373006e0\",\n    \"contract_function\":\"hello\",\n    \"secret_key\":\"SDK5BUQ5OWEFBRM35MZINZ4MT4OAO6TOQ7EI7ED3CGG7KO2MCQOUP542\",\n    \"contract_arguments\":[\"tooo\",\"world\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -564,12 +589,13 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:3000/invoke",
+							"raw": "localhost:3000/api/invoke",
 							"host": [
 								"localhost"
 							],
 							"port": "3000",
 							"path": [
+								"api",
 								"invoke"
 							]
 						}
@@ -584,7 +610,7 @@
 						},
 						{
 							"key": "content-length",
-							"value": "365"
+							"value": "236"
 						},
 						{
 							"key": "access-control-allow-origin",
@@ -603,12 +629,16 @@
 							"value": "access-control-request-headers"
 						},
 						{
+							"key": "access-control-expose-headers",
+							"value": "*"
+						},
+						{
 							"key": "date",
-							"value": "Sat, 01 Apr 2023 12:17:19 GMT"
+							"value": "Thu, 06 Apr 2023 20:39:29 GMT"
 						}
 					],
 					"cookie": [],
-					"body": "{\n    \"status\": true,\n    \"message\": \"contract invokation failed\",\n    \"data\": {\n        \"InvokeContractResponse\": {\n            \"result\": \"error: Found argument '--too' which wasn't expected, or isn't valid in this context\\n\\n\\tDid you mean '--to'?\\n\\n\\tIf you tried to supply `--too` as a value rather than a flag, use `-- --too`\\n\\nUSAGE:\\n    hello --to <Symbol>\\n\\nFor more information try --help\\n\"\n        }\n    }\n}"
+					"body": "{\n    \"status\": false,\n    \"message\": \"contract invokation failederror: unexpected argument '--tooo' found\\n\\n  note: argument '--to' exists\\n\\nUsage: hello --to <Symbol>\\n\\nFor more information, try '--help'.\\n\",\n    \"data\": {\n        \"String\": \"failed request\"\n    }\n}"
 				}
 			]
 		}
