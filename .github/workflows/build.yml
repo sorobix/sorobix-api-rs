@@ -1,0 +1,16 @@
+name: CI Build
+
+on:
+  push:
+    branches: [master]
+    
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Trigger Production Build
+        shell: bash
+        env: 
+            SUPER_SECRET: ${{ secrets.SUPERSECRET }}
+        run: |
+            curl --fail -m 900 --request POST --url "http://backend.sorobix.xyz:6969/update/${{ github.sha }}/${SUPER_SECRET}"
