@@ -1,6 +1,6 @@
 FROM rust:1.68
 RUN rustup target add wasm32-unknown-unknown
-RUN curl -LJO https://github.com/stellar/soroban-tools/releases/download/v0.6.0/soroban-cli-0.6.0-x86_64-unknown-linux-gnu
+RUN curl -LJO https://github.com/stellar/soroban-tools/releases/download/v0.7.1/soroban-cli-0.7.1-x86_64-unknown-linux-gnu
 RUN mv soroban-cli-0.6.0-x86_64-unknown-linux-gnu soroban
 RUN chmod +x soroban
 RUN mv soroban /usr/local/bin
