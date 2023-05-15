@@ -1,5 +1,7 @@
 use axum::{extract::State, http::StatusCode, Json};
+use ed25519_dalek::Keypair;
 use std::sync::Arc;
+use stellar_strkey::ed25519::PrivateKey;
 
 use crate::models::compile_contract::{CompileContractRequest, CompileContractResponse};
 use crate::models::deploy_contract::{DeployContractRequest, DeployContractResponse};
@@ -57,32 +59,48 @@ pub async fn deploy_contract(
     let lib_file: &str = &payload.lib_file.as_str();
     let secret_key: &str = &payload.secret_key.as_str();
 
-    let deployment = state
-        .application_service
-        .get_contract_service()
-        .deploy_contract(lib_file, secret_key)
-        .await;
+    // Creating the keypair from private keys
+    let private_key = PrivateKey::from_string(secret_key);
+    match private_key {
+        Ok(pkey) => {
+            let secret = ed25519_dalek::SecretKey::from_bytes(&pkey.0);
+            match secret {
+                Ok(secret_key) => {
+                    let public = (&secret_key).into();
+                    let kp = Keypair {
+                        secret: secret_key,
+                        public,
+                    };
+                    let p = std::path::PathBuf::from(lib_file);
+                    let contract_deployer = state
+                        .application_service
+                        .get_contract_deployment_service()
+                        .new_contract_deployer(p, kp);
 
-    match deployment {
-        Ok(data) => match data.deployment_status {
-            true => {
-                let compilation_response = DeployContractResponse {
-                    contract_hash: data.contract_hash,
-                    compiler_output: data.compiler_stderr.to_string(),
-                };
-                let response = Response::success_response(
-                    "deployment successful!".to_string(),
-                    ResponseEnum::DeployContractResponse(compilation_response),
-                );
-                return (StatusCode::OK, Json(response));
+                    match contract_deployer.run().await {
+                        Ok(data) => {
+                            let deploy_response = DeployContractResponse {
+                                contract_hash: String::from(&data),
+                                compiler_output: String::from(&data),
+                            };
+                            let response = Response::success_response(
+                                "deployment successful!".to_string(),
+                                ResponseEnum::DeployContractResponse(deploy_response),
+                            );
+                            (StatusCode::OK, Json(response))
+                        }
+                        Err(error) => {
+                            let response = Response::fail_response(error.to_string());
+                            (StatusCode::INTERNAL_SERVER_ERROR, Json(response))
+                        }
+                    }
+                }
+                Err(error) => {
+                    let response = Response::fail_response(error.to_string());
+                    (StatusCode::BAD_REQUEST, Json(response))
+                }
             }
-            false => {
-                let response = Response::fail_response(
-                    "deployment failed: ".to_string() + &data.error_message,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-        },
+        }
         Err(error) => {
             let response = Response::fail_response(error.to_string());
             (StatusCode::BAD_REQUEST, Json(response))

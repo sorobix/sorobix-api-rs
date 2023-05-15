@@ -4,6 +4,7 @@ extern crate rand;
 mod handlers;
 mod models;
 mod services;
+mod utils;
 
 use axum::{
     routing::{get, post},
