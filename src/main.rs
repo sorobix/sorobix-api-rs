@@ -10,6 +10,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -17,9 +18,9 @@ use tower_http::trace::TraceLayer;
 
 use crate::{
     handlers::account_handler::generate_new_account,
-    handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract},
-    models::router_state::RouterState,
-    services::application_service::ApplicationService,
+    handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract, ws_handler},
+    models::{router_state::RouterState, websocket_state::WebSocketState},
+    services::{application_service::ApplicationService, channel_service::ChannelService},
 };
 
 #[tokio::main]
@@ -37,7 +38,7 @@ async fn main() {
         application_service,
     };
     let state = Arc::new(application_state);
-    let app = Router::new()
+    let rest_app = Router::new()
         .route("/", get(root))
         .route("/account", post(generate_new_account))
         .route("/compile", post(compile_contract))
@@ -47,12 +48,34 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(Router::new().nest("/api", app).into_make_service())
-        .await
-        .unwrap();
+    let rest_addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let ws_addr = SocketAddr::from(([0, 0, 0, 0], 3001));
+
+    // let channel_service = ChannelService::new();
+    // let websocket_state = WebSocketState { channel_service };
+    // let ws_state = Arc::new(websocket_state);
+
+    let ws_app = Router::new().route("/", get(ws_handler));
+    // .with_state(ws_state);
+
+    let rest_server = axum::Server::bind(&rest_addr)
+        .serve(Router::new().nest("/api", rest_app).into_make_service());
+    let ws_server = axum::Server::bind(&ws_addr)
+        .serve(ws_app.into_make_service_with_connect_info::<SocketAddr>());
+
+    tracing::debug!("rest server listening on {}", rest_addr);
+    tracing::debug!("websocket server listening on {}", ws_addr);
+
+    // init kafka producer and consumer conn
+
+    tokio::select! {
+        _ = rest_server => {
+            println!("REST server stopped");
+        }
+        _ = ws_server => {
+            println!("WebSocket server stopped");
+        }
+    };
 }
 
 async fn root() -> Json<serde_json::Value> {

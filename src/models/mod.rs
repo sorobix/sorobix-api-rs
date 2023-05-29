@@ -5,3 +5,4 @@ pub mod generate_account;
 pub mod invoke_contract;
 pub mod response;
 pub mod router_state;
+pub mod websocket_state;

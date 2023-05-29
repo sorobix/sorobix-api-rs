@@ -1,13 +1,33 @@
+use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{ConnectInfo, WebSocketUpgrade};
+use axum::response::IntoResponse;
 use axum::{extract::State, http::StatusCode, Json};
 use ed25519_dalek::Keypair;
+use rand::Rng;
+use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use stellar_strkey::ed25519::PrivateKey;
+use uuid::Uuid;
 
 use crate::models::compile_contract::{CompileContractRequest, CompileContractResponse};
 use crate::models::deploy_contract::{DeployContractRequest, DeployContractResponse};
 use crate::models::invoke_contract::{InvokeContractRequest, InvokeContractResponse};
 use crate::models::response::{Response, ResponseEnum};
 use crate::models::router_state::RouterState;
+use crate::services::contract_compiler::{create_channel, handle_socket};
+
+pub async fn ws_handler(
+    ws: WebSocketUpgrade,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+) -> impl IntoResponse {
+    // let receiver = channel_provider.get_channel().receiver.lock().unwrap();
+    let mut websocket_connections: HashMap<String, &mut WebSocket> = HashMap::new();
+
+    println!("connected.");
+
+    ws.on_upgrade(move |socket| handle_socket(socket, addr))
+}
 
 pub async fn compile_contract(
     State(state): State<Arc<RouterState>>,
