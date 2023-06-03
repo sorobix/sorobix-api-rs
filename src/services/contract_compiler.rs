@@ -108,7 +108,7 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
                 send_to_kafka(who.to_string().as_str(), &compilation_files);
 
                 // let _resp = sender.send(Message::Text(format!("Compiling..."))).await;
-                receive_from_kafka(who, sender);
+                // receive_from_kafka(who, sender);
 
                 //     sender.send(Message::Text((format!("aaajajaja")))).await;
 
@@ -243,11 +243,11 @@ pub fn receive_from_kafka(
                         result.data = written.into_os_string().into_string().unwrap();
                     }
                     // sender.send(item)
-                    let _resp = sender
-                        .send(Message::Text(format!(
-                            "Received message: {} {}",
-                            result.success, result.data
-                        )))
+                    // let _resp = sender
+                    //     .send(Message::Text(format!(
+                    //         "Received message: {} {}",
+                    //         result.success, result.data
+                    //     )))
                         // .await;
                     ;
                     // let _ = sender.send(result);
