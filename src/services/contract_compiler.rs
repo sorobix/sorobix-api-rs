@@ -4,6 +4,7 @@ use axum::{
 };
 use chrono::Utc;
 use futures_util::stream::SplitSink;
+use tokio::runtime::{self, Runtime};
 
 use std::{fs, path::PathBuf};
 use std::{net::SocketAddr, sync::mpsc};
@@ -12,7 +13,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use futures::{sink::SinkExt, stream::StreamExt};
+use futures::executor::block_on;
+use futures::{channel::oneshot, sink::SinkExt, stream::StreamExt};
 
 use std::thread;
 
@@ -64,8 +66,6 @@ impl ProducerContext for ProduceCallbackLogger {
 
 /// Actual websocket statemachine (one will be spawned per connection)
 pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
-    let channel_data = create_channel();
-
     if socket.send(Message::Ping("hola".into())).await.is_ok() {
         println!("Recieved ws conn from: {}...", who);
     } else {
@@ -91,9 +91,15 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
 
     println!("lmaiii");
 
-    tokio::spawn(async move {
+    // let rt = Runtime::new().unwrap();
+    // let rt = runtime::Builder::new_multi_thread()
+    //     .enable_all()
+    //     .build()
+    //     .unwrap();
+
+    thread::spawn(move || {
         println!("atleast spwan hua");
-        while let Some(Ok(msg)) = receiver.next().await {
+        while let Some(Ok(msg)) = block_on(receiver.next()) {
             println!("atleast message mila");
 
             if message_is_for_compilation(&msg) {
@@ -105,12 +111,15 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
                 //     )))
                 //     .await;
                 // println!("yes gg for compul");
+                println!("sent {:#?}", thread::current().id());
                 send_to_kafka(who.to_string().as_str(), &compilation_files);
 
                 // let _resp = sender.send(Message::Text(format!("Compiling..."))).await;
-                // receive_from_kafka(who, sender);
+                let data = block_on(receive_from_kafka(who));
+                // println!("Received data: {}", data);
+                println!("recd: {:#?}", thread::current().id());
 
-                //     sender.send(Message::Text((format!("aaajajaja")))).await;
+                let lol = block_on(sender.send(Message::Text((format!("{}", data)))));
 
                 //     let received_message = channel_data.receiver.recv().unwrap();
                 //     println!(
@@ -212,10 +221,58 @@ fn validate_input(input: &str) -> Result<(), &'static str> {
     }
 }
 
-pub fn receive_from_kafka(
-    who: SocketAddr,
-    sender: SplitSink<WebSocket, axum::extract::ws::Message>,
-) {
+// pub async fn receive_from_kafka(who: SocketAddr) -> String {
+//     let (tx, rx) = oneshot::channel();
+
+//     let consumer: BaseConsumer = ClientConfig::new()
+//         .set("bootstrap.servers", "localhost:9092")
+//         .set("group.id", "wasm-gen-v1")
+//         .create()
+//         .expect("invalid consumer config");
+
+//     consumer
+//         .subscribe(&["wasm-built"])
+//         .expect("topic subscribe failed");
+
+//     println!("conn successfully as kafka consumer");
+
+//     thread::spawn(move || {
+//         for msg_result in consumer.iter().flatten() {
+//             let (key, value) = (
+//                 msg_result.key_view().unwrap().unwrap(),
+//                 msg_result.payload().unwrap(),
+//             );
+//             if who.to_string() == key {
+//                 if let Ok(mut result) = parse_kafka_message(value) {
+//                     if result.success {
+//                         let trimmed_string = result.data.trim_matches('"');
+
+//                         let written = write_wasm_file(key, trimmed_string);
+//                         result.data = written.into_os_string().into_string().unwrap();
+//                         return result.data
+//                     }
+//                     // sender.send(item)
+//                     // let _resp = sender
+//                     //     .send(Message::Text(format!(
+//                     //         "Received message: {} {}",
+//                     //         result.success, result.data
+//                     //     )))
+//                         // .await;
+//                     ;
+//                     // let _ = sender.send(result);
+//                 } else {
+//                     println!("Error parsing Kafka message");
+//                 }
+//             }
+//         }
+//         return "consume iter ke bahar".to_string();
+//     });
+//     return "thread ke bahar".to_string();
+// }
+
+pub async fn receive_from_kafka(who: SocketAddr) -> String {
+    let (tx, rx) = oneshot::channel();
+
     let consumer: BaseConsumer = ClientConfig::new()
         .set("bootstrap.servers", "localhost:9092")
         .set("group.id", "wasm-gen-v1")
@@ -228,35 +285,51 @@ pub fn receive_from_kafka(
 
     println!("conn successfully as kafka consumer");
 
-    thread::spawn(move || {
-        for msg_result in consumer.iter().flatten() {
-            let (key, value) = (
-                msg_result.key_view().unwrap().unwrap(),
-                msg_result.payload().unwrap(),
-            );
-            if who.to_string() == key {
-                if let Ok(mut result) = parse_kafka_message(value) {
-                    if result.success {
-                        let trimmed_string = result.data.trim_matches('"');
-
-                        let written = write_wasm_file(key, trimmed_string);
-                        result.data = written.into_os_string().into_string().unwrap();
-                    }
-                    // sender.send(item)
-                    // let _resp = sender
-                    //     .send(Message::Text(format!(
-                    //         "Received message: {} {}",
-                    //         result.success, result.data
-                    //     )))
-                        // .await;
-                    ;
-                    // let _ = sender.send(result);
-                } else {
-                    println!("Error parsing Kafka message");
-                }
-            }
+    // tokio::spawn(async move {
+    for msg_result in consumer.iter().flatten() {
+        let (key, value) = (
+            msg_result.key_view().unwrap().unwrap(),
+            msg_result.payload().unwrap(),
+        );
+        println!("found key, sending to channel {}", key);
+        // println!("going to check who, sending to channel {}", who);
+        if who.to_string() == key {
+            println!("lmai")
         }
-    });
+        if let Ok(mut result) = parse_kafka_message(value) {
+            println!("yeh bbhi");
+            // println!("found data, sending to channel {}", key);
+            let _ = tx.send(result.data);
+            break;
+
+            // if result.success {
+            //     let trimmed_string = result.data.trim_matches('"');
+
+            //     let written = write_wasm_file(key, trimmed_string);
+            //     result.data = written.into_os_string().into_string().unwrap();
+
+            //     // Send the result data through the channel
+            //     // println!("found data, sending to channel {}", result.data);
+            //     // let _ = tx.send(result.data);
+            //     // return;
+            // }
+
+            // Handle other cases if needed
+        } else {
+            println!("yeh muts");
+            println!("Error parsing Kafka message");
+        }
+    }
+
+    // If no message matches the condition, send an empty string through the channel
+    // let _ = tx.send(String::new());
+    // });
+
+    // Wait for the result data or keep waiting indefinitely
+    rx.await.unwrap_or_else(|_| {
+        println!("Channel closed unexpectedly");
+        String::new()
+    })
 }
 
 fn parse_kafka_message(value: &[u8]) -> Result<CompilationResult, Box<dyn std::error::Error>> {
