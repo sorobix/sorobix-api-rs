@@ -19,7 +19,7 @@ use futures::{channel::oneshot, sink::SinkExt, stream::StreamExt};
 use std::thread;
 
 use rdkafka::{
-    consumer::{BaseConsumer, Consumer},
+    consumer::{BaseConsumer, CommitMode, Consumer},
     producer::{BaseRecord, ProducerContext, ThreadedProducer},
     ClientConfig, ClientContext, Message as KafkaMessage,
 };
@@ -274,6 +274,9 @@ pub async fn receive_from_kafka(who: SocketAddr) -> String {
     let (tx, rx) = oneshot::channel();
 
     let consumer: BaseConsumer = ClientConfig::new()
+        .set("enable.auto.commit", "false")
+        .set("enable.auto.offset.store", "false")
+        .set("auto.offset.reset", "earliest")
         .set("bootstrap.servers", "localhost:9092")
         .set("group.id", "wasm-gen-v1")
         .create()
@@ -286,21 +289,32 @@ pub async fn receive_from_kafka(who: SocketAddr) -> String {
     println!("conn successfully as kafka consumer");
 
     // tokio::spawn(async move {
-    for msg_result in consumer.iter().flatten() {
-        let (key, value) = (
-            msg_result.key_view().unwrap().unwrap(),
-            msg_result.payload().unwrap(),
-        );
-        println!("found key, sending to channel {}", key);
+    for msg_result in consumer.iter() {
+        let borrowed_msg = msg_result.unwrap();
+        let key = borrowed_msg.key_view::<str>().unwrap();
+        let value = borrowed_msg.payload().unwrap();
+        // let (key, value) = (
+        //     msg_result.unwrap().key_view::<str>().unwrap(),
+        //     msg_result.unwrap().payload().unwrap(),
+        // );
+        println!("found key, sending to channel {:#?}", key);
         // println!("going to check who, sending to channel {}", who);
-        if who.to_string() == key {
-            println!("lmai")
-        }
         if let Ok(mut result) = parse_kafka_message(value) {
             println!("yeh bbhi");
             // println!("found data, sending to channel {}", key);
-            let _ = tx.send(result.data);
-            break;
+            match key {
+                Ok(data) => {
+                    if data == &who.to_string() {
+                        let _ = tx.send(result.data);
+                        break;
+                    } else {
+                        println!("bhai mismatch mil gaya {:#?}", who);
+                    }
+                }
+                Err(err) => {
+                    println!("gaand lag gayi bhai {:#?}", err);
+                }
+            }
 
             // if result.success {
             //     let trimmed_string = result.data.trim_matches('"');
