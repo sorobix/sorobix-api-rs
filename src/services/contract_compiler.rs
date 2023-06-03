@@ -3,6 +3,7 @@ use axum::{
     response::IntoResponse,
 };
 use chrono::Utc;
+use futures_util::stream::SplitSink;
 
 use std::{fs, path::PathBuf};
 use std::{net::SocketAddr, sync::mpsc};
@@ -98,16 +99,16 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
             if message_is_for_compilation(&msg) {
                 println!("og gg");
                 let compilation_files = convert_compilation_msg_to_string(&msg);
-                let _resp = sender
-                    .send(Message::Text(format!(
-                        "Sending to Backend for Compiling..."
-                    )))
-                    .await;
-                println!("yes gg for compul");
+                // let _resp = sender
+                //     .send(Message::Text(format!(
+                //         "Sending to Backend for Compiling..."
+                //     )))
+                //     .await;
+                // println!("yes gg for compul");
                 send_to_kafka(who.to_string().as_str(), &compilation_files);
 
-                let _resp = sender.send(Message::Text(format!("Compiling..."))).await;
-                // receive_from_kafka(who, channel_data.sender.clone());
+                // let _resp = sender.send(Message::Text(format!("Compiling..."))).await;
+                receive_from_kafka(who, sender);
 
                 //     sender.send(Message::Text((format!("aaajajaja")))).await;
 
@@ -211,7 +212,10 @@ fn validate_input(input: &str) -> Result<(), &'static str> {
     }
 }
 
-pub fn receive_from_kafka(who: SocketAddr, sender: mpsc::Sender<CompilationResult>) {
+pub fn receive_from_kafka(
+    who: SocketAddr,
+    sender: SplitSink<WebSocket, axum::extract::ws::Message>,
+) {
     let consumer: BaseConsumer = ClientConfig::new()
         .set("bootstrap.servers", "localhost:9092")
         .set("group.id", "wasm-gen-v1")
@@ -238,7 +242,15 @@ pub fn receive_from_kafka(who: SocketAddr, sender: mpsc::Sender<CompilationResul
                         let written = write_wasm_file(key, trimmed_string);
                         result.data = written.into_os_string().into_string().unwrap();
                     }
-                    let _ = sender.send(result);
+                    // sender.send(item)
+                    let _resp = sender
+                        .send(Message::Text(format!(
+                            "Received message: {} {}",
+                            result.success, result.data
+                        )))
+                        // .await;
+                    ;
+                    // let _ = sender.send(result);
                 } else {
                     println!("Error parsing Kafka message");
                 }
