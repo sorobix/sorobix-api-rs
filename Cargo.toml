@@ -43,3 +43,4 @@ futures = "0.3"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 lazy_static = "1.4"
 uuid = "0.8"
+crossbeam-channel = "0.5.8"

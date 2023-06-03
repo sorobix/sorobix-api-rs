@@ -2063,6 +2063,7 @@ dependencies = [
  "axum",
  "base64 0.13.1",
  "chrono",
+ "crossbeam-channel",
  "ed25519-dalek",
  "futures",
  "futures-util",

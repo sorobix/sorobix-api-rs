@@ -10,7 +10,14 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use crossbeam_channel::{unbounded, Sender};
+use models::compile_contract::CompilationResult;
 
+use rdkafka::{
+    consumer::{BaseConsumer, CommitMode, Consumer},
+    producer::{BaseRecord, ProducerContext, ThreadedProducer},
+    ClientConfig, ClientContext, Message as KafkaMessage,
+};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
@@ -20,15 +27,23 @@ use crate::{
     handlers::account_handler::generate_new_account,
     handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract, ws_handler},
     models::{router_state::RouterState, websocket_state::WebSocketState},
-    services::{application_service::ApplicationService, channel_service::ChannelService},
+    services::{
+        application_service::ApplicationService, channel_service::ChannelService,
+        contract_compiler::parse_kafka_message,
+    },
 };
+
+pub struct InCh {
+    pub id: String,
+    pub result: CompilationResult,
+}
 
 #[tokio::main]
 async fn main() {
     if std::env::var_os("RUST_LOG").is_none() {
         std::env::set_var(
             "RUST_LOG",
-            "sorobix-api-rs=debug,tower_http=debug,server=debug",
+            "debug,sorobix-api-rs=debug,tower_http=debug,server=debug",
         )
     }
     println!("Sorobix API RS Booted");
@@ -50,13 +65,22 @@ async fn main() {
 
     let rest_addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     let ws_addr = SocketAddr::from(([0, 0, 0, 0], 3001));
+    use std::thread::available_parallelism;
+    let default_parallelism_approx = available_parallelism().unwrap().get();
+    println!("defaul para: {}", default_parallelism_approx);
 
     // let channel_service = ChannelService::new();
-    // let websocket_state = WebSocketState { channel_service };
     // let ws_state = Arc::new(websocket_state);
+    let (s, r) = unbounded::<InCh>();
+    tokio::spawn(async move {
+        receive_from_kafka(s).await;
+    });
+    let websocket_state = WebSocketState { reciever_rec: r };
+    let ws_state = Arc::new(websocket_state);
 
-    let ws_app = Router::new().route("/", get(ws_handler));
-    // .with_state(ws_state);
+    let ws_app = Router::new()
+        .route("/", get(ws_handler))
+        .with_state(ws_state);
 
     let rest_server = axum::Server::bind(&rest_addr)
         .serve(Router::new().nest("/api", rest_app).into_make_service());
@@ -84,4 +108,75 @@ async fn root() -> Json<serde_json::Value> {
         "name": "sorobix-api-rs",
         "author": "Team Sorobix <sorobix@gmail.com>"
     }))
+}
+
+pub async fn receive_from_kafka(sender: Sender<InCh>) {
+    let consumer: BaseConsumer = ClientConfig::new()
+        .set("bootstrap.servers", "localhost:9092")
+        .set("group.id", "wasm-gen-v1")
+        .create()
+        .expect("invalid consumer config");
+
+    consumer
+        .subscribe(&["wasm-built"])
+        .expect("topic subscribe failed");
+
+    println!("conn successfully as kafka consumer");
+
+    // tokio::spawn(async move {
+    for msg_result in consumer.iter() {
+        let borrowed_msg = msg_result.unwrap();
+        let key = borrowed_msg.key_view::<str>().unwrap();
+        let value = borrowed_msg.payload().unwrap();
+        // let (key, value) = (
+        //     msg_result.unwrap().key_view::<str>().unwrap(),
+        //     msg_result.unwrap().payload().unwrap(),
+        // );
+        println!("found key, sending to channel {:#?}", key);
+        // println!("going to check who, sending to channel {}", who);
+        if let Ok(mut result) = parse_kafka_message(value) {
+            // println!("found data, sending to channel {}", key);
+            match key {
+                Ok(data) => {
+                    let new_inch = InCh {
+                        id: data.to_string(),
+                        result,
+                    };
+                    let res = sender.send(new_inch);
+                    match res {
+                        Ok(_) => {}
+                        Err(err) => {
+                            println!("sending channel error {:#?}", err);
+                        }
+                    }
+                }
+                Err(err) => {
+                    println!("gaand lag gayi bhai {:#?}", err);
+                }
+            }
+
+            // if result.success {
+            //     let trimmed_string = result.data.trim_matches('"');
+
+            //     let written = write_wasm_file(key, trimmed_string);
+            //     result.data = written.into_os_string().into_string().unwrap();
+
+            //     // Send the result data through the channel
+            //     // println!("found data, sending to channel {}", result.data);
+            //     // let _ = tx.send(result.data);
+            //     // return;
+            // }
+
+            // Handle other cases if needed
+        } else {
+            println!("yeh muts");
+            println!("Error parsing Kafka message");
+        }
+    }
+
+    // If no message matches the condition, send an empty string through the channel
+    // let _ = tx.send(String::new());
+    // });
+
+    // Wait for the result data or keep waiting indefinitely
 }
