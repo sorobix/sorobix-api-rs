@@ -3,7 +3,7 @@ use axum::{
     response::IntoResponse,
 };
 use chrono::Utc;
-use crossbeam_channel::Receiver;
+use crossbeam_channel::{unbounded, Receiver};
 use futures_util::stream::SplitSink;
 use tokio::runtime::{self, Runtime};
 
@@ -32,7 +32,7 @@ use crate::{
         compile_contract::{ChannelData, CompilationResult, Input},
         websocket_state::WebSocketState,
     },
-    InCh,
+    InCh, InLaw,
 };
 
 struct ProduceCallbackLogger;
@@ -127,10 +127,17 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr, state: Arc<We
     //     }
     // });
     //
+    let (s, r) = unbounded::<InCh>();
+    let new_inlaw = InLaw {
+        new_sender: s.clone(),
+    };
+    if let Err(err) = state.sender_kafka.send(new_inlaw) {
+        println!("some error sending to kafka {}", err);
+    };
     let builder = thread::Builder::new();
     let _handler = builder.spawn(move || {
         println!("process id: {:#?}", thread::current().id());
-        let rec_data = state.reciever_rec.clone();
+        let rec_data = r.clone();
         let mut red_flag = false;
         // let gg = rec_data.iter();
         // for data in gg {
@@ -171,11 +178,10 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr, state: Arc<We
                 println!("who: {}", who.to_string());
                 if g.id == who.to_string() {
                     println!("match huaaa");
-                    let lol = block_on(sender.send(Message::Text(format!("{}", g.result.data))));
+                    let lol = block_on(sender.send(Message::Text(format!("{}", g.result))));
                     if let Err(err) = lol {
                         println!("sender issues {:#?}", err);
                     }
-                    break;
                 }
             };
         }

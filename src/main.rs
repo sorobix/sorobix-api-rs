@@ -10,7 +10,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use crossbeam_channel::{unbounded, Sender};
+use crossbeam_channel::{unbounded, Receiver, Sender};
 use models::compile_contract::CompilationResult;
 
 use rdkafka::{
@@ -35,7 +35,11 @@ use crate::{
 
 pub struct InCh {
     pub id: String,
-    pub result: CompilationResult,
+    pub result: String,
+}
+
+pub struct InLaw {
+    pub new_sender: Sender<InCh>,
 }
 
 #[tokio::main]
@@ -71,11 +75,11 @@ async fn main() {
 
     // let channel_service = ChannelService::new();
     // let ws_state = Arc::new(websocket_state);
-    let (s, r) = unbounded::<InCh>();
+    let (s, r) = unbounded::<InLaw>();
     tokio::spawn(async move {
-        receive_from_kafka(s).await;
+        receive_from_kafka(r).await;
     });
-    let websocket_state = WebSocketState { reciever_rec: r };
+    let websocket_state = WebSocketState { sender_kafka: s };
     let ws_state = Arc::new(websocket_state);
 
     let ws_app = Router::new()
@@ -110,7 +114,7 @@ async fn root() -> Json<serde_json::Value> {
     }))
 }
 
-pub async fn receive_from_kafka(sender: Sender<InCh>) {
+pub async fn receive_from_kafka(reciever: Receiver<InLaw>) {
     let consumer: BaseConsumer = ClientConfig::new()
         .set("bootstrap.servers", "localhost:9092")
         .set("group.id", "wasm-gen-v1")
@@ -123,6 +127,7 @@ pub async fn receive_from_kafka(sender: Sender<InCh>) {
 
     println!("conn successfully as kafka consumer");
 
+    let mut senders: Vec<InLaw> = Vec::new();
     // tokio::spawn(async move {
     for msg_result in consumer.iter() {
         let borrowed_msg = msg_result.unwrap();
@@ -134,21 +139,35 @@ pub async fn receive_from_kafka(sender: Sender<InCh>) {
         // );
         println!("found key, sending to channel {:#?}", key);
         // println!("going to check who, sending to channel {}", who);
-        if let Ok(mut result) = parse_kafka_message(value) {
+        if let Ok(result) = parse_kafka_message(value) {
             // println!("found data, sending to channel {}", key);
             match key {
                 Ok(data) => {
-                    let new_inch = InCh {
-                        id: data.to_string(),
-                        result,
-                    };
-                    let res = sender.send(new_inch);
-                    match res {
-                        Ok(_) => {}
-                        Err(err) => {
-                            println!("sending channel error {:#?}", err);
+                    let rec_data = reciever.try_iter();
+                    for sen in rec_data {
+                        senders.push(sen);
+                    }
+                    for sender in &senders {
+                        println!("kafka: SENDING TO OLD SENDERS!");
+                        let new_inch = InCh {
+                            id: data.to_string(),
+                            result: result.data.clone(),
+                        };
+                        let res = sender.new_sender.send(new_inch);
+                        match res {
+                            Ok(_) => {}
+                            Err(err) => {
+                                println!("sending channel error {:#?}", err.to_string());
+                            }
                         }
                     }
+                    // let res = sender.send(new_inch);
+                    // match res {
+                    //     Ok(_) => {}
+                    //     Err(err) => {
+                    //         println!("sending channel error {:#?}", err);
+                    //     }
+                    // }
                 }
                 Err(err) => {
                     println!("gaand lag gayi bhai {:#?}", err);

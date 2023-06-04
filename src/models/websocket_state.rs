@@ -1,7 +1,7 @@
 use crossbeam_channel::{Receiver, Sender};
 
-use crate::{services::channel_service::ChannelService, InCh};
+use crate::{services::channel_service::ChannelService, InCh, InLaw};
 
 pub struct WebSocketState {
-    pub reciever_rec: Receiver<InCh>,
+    pub sender_kafka: Sender<InLaw>,
 }
