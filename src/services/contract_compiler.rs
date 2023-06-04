@@ -129,27 +129,55 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr, state: Arc<We
     //
     let builder = thread::Builder::new();
     let _handler = builder.spawn(move || {
+        println!("process id: {:#?}", thread::current().id());
         let rec_data = state.reciever_rec.clone();
         let mut red_flag = false;
+        // let gg = rec_data.iter();
+        // for data in gg {
+        //     println!("process id: {:#?}", thread::current().id());
+        //     println!("data: {:#?}", data.id);
+        //     println!("who: {}", who.to_string());
+        //     if data.id == who.to_string() {
+        //         println!("match huaaa");
+        //         let lol = block_on(sender.send(Message::Text(format!("{}", data.result.data))));
+        //         if let Err(err) = lol {
+        //             println!("sender issues {:#?}", err);
+        //         }
+        //         red_flag = true;
+        //     }
+        // }
         loop {
-            let gg: Vec<InCh> = rec_data.try_iter().collect();
-            for data in gg {
+            //     let gg: Vec<InCh> = rec_data.try_iter().collect();
+            //     for data in gg {
+            //         println!("process id: {:#?}", thread::current().id());
+            //         println!("data: {:#?}", data.id);
+            //         println!("who: {}", who.to_string());
+            //         if data.id == who.to_string() {
+            //             println!("match huaaa");
+            //             let lol = block_on(sender.send(Message::Text(format!("{}", data.result.data))));
+            //             if let Err(err) = lol {
+            //                 println!("sender issues {:#?}", err);
+            //             }
+            //             red_flag = true;
+            //             break;
+            //         }
+            //     }
+            //     if red_flag {
+            //         break;
+            //     }
+            if let Ok(g) = rec_data.recv() {
                 println!("process id: {:#?}", thread::current().id());
-                println!("data: {:#?}", data.id);
+                println!("data: {:#?}", g.id);
                 println!("who: {}", who.to_string());
-                if data.id == who.to_string() {
+                if g.id == who.to_string() {
                     println!("match huaaa");
-                    let lol = block_on(sender.send(Message::Text(format!("{}", data.result.data))));
+                    let lol = block_on(sender.send(Message::Text(format!("{}", g.result.data))));
                     if let Err(err) = lol {
                         println!("sender issues {:#?}", err);
                     }
-                    red_flag = true;
                     break;
                 }
-            }
-            if red_flag {
-                break;
-            }
+            };
         }
         println!("gg");
     });
@@ -165,7 +193,7 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr, state: Arc<We
             //     )))
             //     .await;
             // println!("yes gg for compul");
-            println!("sent {:#?}", thread::current().id());
+            // println!("sent {:#?}", thread::current().id());
             send_to_kafka(who.to_string().as_str(), &compilation_files);
             // loop {
             //     let mut red_flag = false;
@@ -186,7 +214,7 @@ pub async fn handle_socket(mut socket: WebSocket, who: SocketAddr, state: Arc<We
             // let _resp = sender.send(Message::Text(format!("Compiling..."))).await;
             // let data = block_on(receive_from_kafka(who));
             // println!("Received data: {}", data);
-            println!("recd: {:#?}", thread::current().id());
+            // println!("recd: {:#?}", thread::current().id());
 
             // let _lol = sender.send(Message::Text((format!("{}", data)))).await;
         }
