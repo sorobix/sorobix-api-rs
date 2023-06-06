@@ -2,9 +2,9 @@ use ed25519_dalek::Signer;
 use hex::FromHexError;
 use sha2::{Digest, Sha256};
 use soroban_env_host::xdr::{
-    DecoratedSignature, Error as XdrError, Hash, InstallContractCodeArgs, Signature, SignatureHint,
-    Transaction, TransactionEnvelope, TransactionSignaturePayload,
-    TransactionSignaturePayloadTaggedTransaction, TransactionV1Envelope, WriteXdr,
+    DecoratedSignature, Error as XdrError, Hash, Signature, SignatureHint, Transaction,
+    TransactionEnvelope, TransactionSignaturePayload, TransactionSignaturePayloadTaggedTransaction,
+    TransactionV1Envelope, UploadContractWasmArgs, WriteXdr,
 };
 
 use stellar_strkey::ed25519::PrivateKey;
@@ -13,7 +13,7 @@ use stellar_strkey::ed25519::PrivateKey;
 ///
 /// Might return an error
 pub fn contract_hash(contract: &[u8]) -> Result<Hash, XdrError> {
-    let args_xdr = InstallContractCodeArgs {
+    let args_xdr = UploadContractWasmArgs {
         code: contract.try_into()?,
     }
     .to_xdr()?;

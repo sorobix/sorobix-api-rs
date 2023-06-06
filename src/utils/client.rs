@@ -1,11 +1,16 @@
 use http::{uri::Authority, Uri};
 use jsonrpsee_core::{self, client::ClientT, rpc_params};
 use jsonrpsee_http_client::{HeaderMap, HttpClient, HttpClientBuilder};
-use serde_aux::prelude::deserialize_number_from_string;
-use soroban_env_host::xdr::{
-    AccountEntry, AccountId, DiagnosticEvent, Error as XdrError, LedgerEntryData, LedgerKey,
-    LedgerKeyAccount, PublicKey, ReadXdr, TransactionEnvelope, TransactionMeta, TransactionResult,
-    Uint256, WriteXdr,
+use serde_aux::prelude::{deserialize_default_from_null, deserialize_number_from_string};
+use soroban_env_host::{
+    budget::Budget,
+    events::HostEvent,
+    xdr::{
+        AccountEntry, AccountId, ContractAuth, DiagnosticEvent, Error as XdrError, LedgerEntryData,
+        LedgerFootprint, LedgerKey, LedgerKeyAccount, PublicKey, ReadXdr, Transaction,
+        TransactionEnvelope, TransactionMeta, TransactionResult, TransactionV1Envelope, Uint256,
+        VecM, WriteXdr,
+    },
 };
 use std::{
     str::FromStr,
@@ -13,7 +18,60 @@ use std::{
 };
 use tokio::time::sleep;
 
+use crate::utils::transaction::assemble;
+
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
+
+pub type LogEvents = fn(
+    footprint: &LedgerFootprint,
+    auth: &Vec<VecM<ContractAuth>>,
+    events: &[HostEvent],
+    budget: Option<&Budget>,
+) -> ();
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct Cost {
+    #[serde(
+        rename = "cpuInsns",
+        deserialize_with = "deserialize_number_from_string"
+    )]
+    pub cpu_insns: String,
+    #[serde(
+        rename = "memBytes",
+        deserialize_with = "deserialize_number_from_string"
+    )]
+    pub mem_bytes: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct SimulateHostFunctionResult {
+    #[serde(deserialize_with = "deserialize_default_from_null")]
+    pub auth: Vec<String>,
+    pub xdr: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct SimulateTransactionResponse {
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub error: Option<String>,
+    #[serde(rename = "transactionData")]
+    pub transaction_data: String,
+    #[serde(deserialize_with = "deserialize_default_from_null")]
+    pub events: Vec<String>,
+    #[serde(
+        rename = "minResourceFee",
+        deserialize_with = "deserialize_number_from_string"
+    )]
+    pub min_resource_fee: u32,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub results: Vec<SimulateHostFunctionResult>,
+    pub cost: Cost,
+    #[serde(
+        rename = "latestLedger",
+        deserialize_with = "deserialize_number_from_string"
+    )]
+    pub latest_ledger: u32,
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -37,10 +95,20 @@ pub enum Error {
     UnexpectedTransactionStatus(String),
     #[error("transaction submission timeout")]
     TransactionSubmissionTimeout,
+    #[error("transaction simulation failed: {0}")]
+    TransactionSimulationFailed(String),
     #[error("Missing result in successful response")]
     MissingResult,
     #[error("Failed to read Error response from server")]
     MissingError,
+    #[error("unexpected ({length}) simulate transaction result length")]
+    UnexpectedSimulateTransactionResultSize { length: usize },
+    #[error("unexpected ({count}) number of operations")]
+    UnexpectedOperationCount { count: usize },
+    #[error(
+        "unsupported operation type, must be only one InvokeHostFunctionOp in the transaction."
+    )]
+    UnsupportedOperationType,
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
@@ -197,6 +265,54 @@ impl Client {
         }
     }
 
+    pub async fn simulate_transaction(
+        &self,
+        tx: &TransactionEnvelope,
+    ) -> Result<SimulateTransactionResponse, Error> {
+        tracing::trace!(?tx);
+        let base64_tx = tx.to_xdr_base64()?;
+        let response: SimulateTransactionResponse = self
+            .client()?
+            .request("simulateTransaction", rpc_params![base64_tx])
+            .await?;
+        tracing::trace!(?response);
+        match response.error {
+            None => Ok(response),
+            Some(e) => Err(Error::TransactionSimulationFailed(e)),
+        }
+    }
+
+    // Simulate a transaction, then assemble the result of the simulation into the envelope, so it
+    // is ready for sending to the network.
+    pub async fn prepare_transaction(
+        &self,
+        tx: &Transaction,
+        log_events: Option<LogEvents>,
+    ) -> Result<Transaction, Error> {
+        tracing::trace!(?tx);
+        let sim_response = self
+            .simulate_transaction(&TransactionEnvelope::Tx(TransactionV1Envelope {
+                tx: tx.clone(),
+                signatures: VecM::default(),
+            }))
+            .await?;
+        assemble(tx, &sim_response, log_events)
+    }
+
+    pub async fn prepare_and_send_transaction(
+        &self,
+        tx_without_preflight: &Transaction,
+        key: &ed25519_dalek::Keypair,
+        network_passphrase: &str,
+        log_events: Option<LogEvents>,
+    ) -> Result<(TransactionResult, Vec<DiagnosticEvent>), Error> {
+        let unsigned_tx = self
+            .prepare_transaction(tx_without_preflight, log_events)
+            .await?;
+        let tx = crate::utils::helper::sign_transaction(key, &unsigned_tx, network_passphrase)?;
+        self.send_transaction(&tx).await
+    }
+
     pub async fn send_transaction(
         &self,
         tx: &TransactionEnvelope,
@@ -214,7 +330,13 @@ impl Client {
             .map_err(|err| Error::TransactionSubmissionFailed(format!("{err:#?}")))?;
 
         if status == "ERROR" {
-            let error = error_result_xdr.ok_or(Error::MissingError);
+            let error = error_result_xdr
+                .ok_or(Error::MissingError)
+                .and_then(|x| {
+                    TransactionResult::read_xdr_base64(&mut x.as_bytes())
+                        .map_err(|_| Error::InvalidResponse)
+                })
+                .map(|r| r.result);
             tracing::error!(?error);
             return Err(Error::TransactionSubmissionFailed(format!("{:#?}", error?)));
         }

@@ -16,15 +16,15 @@ soroban-env-host = { features = [
     "vm",
     "serde",
     "hostfn_log_fmt_values",
-], version = "0.0.15" }
+], version = "0.0.16" }
 rand = "0.7.0"
 hex = "0.4.3"
 sha2 = "0.10.6"
 ed25519-dalek = "1.0.1"
-soroban-spec = "0.7.0"
-soroban-ledger-snapshot = "0.7.0"
+soroban-spec = "0.8.0"
+soroban-ledger-snapshot = "0.8.0"
 stellar-strkey = "0.0.7"
-soroban-sdk = "0.7.0"
+soroban-sdk = "0.8.0"
 thiserror = "1.0.31"
 itertools = "0.10.5"
 jsonrpsee-http-client = "0.15.1"

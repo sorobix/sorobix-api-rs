@@ -8,18 +8,17 @@ use rand::Rng;
 use sha2::{Digest, Sha256};
 use soroban_env_host::xdr::{
     AccountId, ContractId, CreateContractArgs, Error as XdrError, Hash, HashIdPreimage,
-    HostFunction, InvokeHostFunctionOp, LedgerFootprint, LedgerKey::ContractCode,
-    LedgerKey::ContractData, LedgerKeyContractCode, LedgerKeyContractData, Memo, MuxedAccount,
-    Operation, OperationBody, Preconditions, PublicKey, ScVal, SequenceNumber, Transaction,
-    TransactionEnvelope, TransactionExt, Uint256, VecM, WriteXdr,
+    HostFunction, InvokeHostFunctionOp, Memo, MuxedAccount, Operation, OperationBody,
+    Preconditions, PublicKey, SequenceNumber, Transaction, TransactionExt, Uint256, VecM, WriteXdr,
 };
 use soroban_env_host::xdr::{
-    HashIdPreimageSourceAccountContractId, InstallContractCodeArgs, ScContractExecutable,
+    HashIdPreimageSourceAccountContractId, HostFunctionArgs, ScContractExecutable,
+    UploadContractWasmArgs,
 };
 use soroban_env_host::HostError;
 
 use crate::utils::constants::{NETWORK_PHRASE, NETWORK_URL};
-use crate::utils::helper::{contract_hash, id_from_str, sign_transaction};
+use crate::utils::helper::{contract_hash, id_from_str};
 use crate::{utils::client::Client, utils::wasm};
 
 pub struct ContractDepoymentService {}
@@ -125,7 +124,9 @@ impl ContractDeployer {
             salt,
             &key,
         )?;
-        client.send_transaction(&tx).await?;
+        client
+            .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, None)
+            .await?;
 
         let gg = hex::encode(contract_id.0);
         Ok(gg)
@@ -147,14 +148,11 @@ impl ContractDeployer {
         let account_details = client.get_account(&public_strkey).await?;
         let sequence: i64 = account_details.seq_num.into();
 
-        let (tx, hash) = build_install_contract_code_tx(
-            contract,
-            sequence + 1,
-            self.fee.fee,
-            &NETWORK_PHRASE,
-            &key,
-        )?;
-        client.send_transaction(&tx).await?;
+        let (tx, hash) =
+            build_install_contract_code_tx(contract.clone(), sequence + 1, self.fee.fee, &key)?;
+        client
+            .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, None)
+            .await?;
 
         Ok(hash)
     }
@@ -164,23 +162,20 @@ pub(crate) fn build_install_contract_code_tx(
     contract: Vec<u8>,
     sequence: i64,
     fee: u32,
-    network_passphrase: &str,
     key: &ed25519_dalek::Keypair,
-) -> Result<(TransactionEnvelope, Hash), XdrError> {
+) -> Result<(Transaction, Hash), XdrError> {
     let hash = contract_hash(&contract)?;
 
     let op = Operation {
-        source_account: None,
+        source_account: Some(MuxedAccount::Ed25519(Uint256(key.public.to_bytes()))),
         body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-            function: HostFunction::InstallContractCode(InstallContractCodeArgs {
-                code: contract.try_into()?,
-            }),
-            footprint: LedgerFootprint {
-                read_only: VecM::default(),
-                read_write: vec![ContractCode(LedgerKeyContractCode { hash: hash.clone() })]
-                    .try_into()?,
-            },
-            auth: VecM::default(),
+            functions: vec![HostFunction {
+                args: HostFunctionArgs::UploadContractWasm(UploadContractWasmArgs {
+                    code: contract.try_into()?,
+                }),
+                auth: VecM::default(),
+            }]
+            .try_into()?,
         }),
     };
 
@@ -194,9 +189,7 @@ pub(crate) fn build_install_contract_code_tx(
         ext: TransactionExt::V0,
     };
 
-    let envelope = sign_transaction(key, &tx, network_passphrase)?;
-
-    Ok((envelope, hash))
+    Ok((tx, hash))
 }
 
 fn build_create_contract_tx(
@@ -206,7 +199,7 @@ fn build_create_contract_tx(
     network_passphrase: &str,
     salt: [u8; 32],
     key: &ed25519_dalek::Keypair,
-) -> Result<(TransactionEnvelope, Hash), Error> {
+) -> Result<(Transaction, Hash), Error> {
     let network_id = Hash(Sha256::digest(network_passphrase.as_bytes()).into());
     let preimage =
         HashIdPreimage::ContractIdFromSourceAccount(HashIdPreimageSourceAccountContractId {
@@ -222,19 +215,14 @@ fn build_create_contract_tx(
     let op = Operation {
         source_account: None,
         body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-            function: HostFunction::CreateContract(CreateContractArgs {
-                contract_id: ContractId::SourceAccount(Uint256(salt)),
-                source: ScContractExecutable::WasmRef(hash.clone()),
-            }),
-            footprint: LedgerFootprint {
-                read_only: vec![ContractCode(LedgerKeyContractCode { hash })].try_into()?,
-                read_write: vec![ContractData(LedgerKeyContractData {
-                    contract_id: Hash(contract_id.into()),
-                    key: ScVal::LedgerKeyContractExecutable,
-                })]
-                .try_into()?,
-            },
-            auth: VecM::default(),
+            functions: vec![HostFunction {
+                args: HostFunctionArgs::CreateContract(CreateContractArgs {
+                    contract_id: ContractId::SourceAccount(Uint256(salt)),
+                    executable: ScContractExecutable::WasmRef(hash),
+                }),
+                auth: VecM::default(),
+            }]
+            .try_into()?,
         }),
     };
     let tx = Transaction {
@@ -247,7 +235,5 @@ fn build_create_contract_tx(
         ext: TransactionExt::V0,
     };
 
-    let envelope = sign_transaction(key, &tx, network_passphrase)?;
-
-    Ok((envelope, Hash(contract_id.into())))
+    Ok((tx, Hash(contract_id.into())))
 }
