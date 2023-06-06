@@ -9,6 +9,8 @@ use soroban_env_host::xdr::{
 
 use stellar_strkey::ed25519::PrivateKey;
 
+use crate::models::deploy_contract::RedisResponse;
+
 /// # Errors
 ///
 /// Might return an error
@@ -86,4 +88,23 @@ pub(crate) fn parse_secret_key(
     s: &str,
 ) -> Result<ed25519_dalek::Keypair, ed25519_dalek::SignatureError> {
     into_key_pair(&PrivateKey::from_string(s).unwrap())
+}
+
+pub fn redis_decoder(i: &str) -> Vec<u8> {
+    if let Ok(res) = serde_json::from_str::<RedisResponse>(i) {
+        if !res.status {
+            tracing::debug!("the deployed contract is false")
+        }
+        tracing::debug!("wasm: {}", res.wasm);
+        match base64::decode(res.wasm) {
+            Ok(d) => return d,
+            Err(err) => {
+                tracing::error!("decode error {}", err);
+                return vec![];
+            }
+        }
+    } else {
+        tracing::error!("serde decode error");
+    };
+    vec![]
 }

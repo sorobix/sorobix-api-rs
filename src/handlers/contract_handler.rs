@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, Json};
 use ed25519_dalek::Keypair;
+use redis::Commands;
 use std::sync::Arc;
 use stellar_strkey::ed25519::PrivateKey;
 
@@ -7,6 +8,7 @@ use crate::models::deploy_contract::{DeployContractRequest, DeployContractRespon
 use crate::models::invoke_contract::{InvokeContractRequest, InvokeContractResponse};
 use crate::models::response::{Response, ResponseEnum};
 use crate::models::router_state::RouterState;
+use crate::utils::helper::redis_decoder;
 
 pub async fn deploy_contract(
     State(state): State<Arc<RouterState>>,
@@ -14,6 +16,22 @@ pub async fn deploy_contract(
 ) -> (StatusCode, Json<Response>) {
     let lib_file: &str = &payload.lib_file.as_str();
     let secret_key: &str = &payload.secret_key.as_str();
+    let redis_client = &state.application_service.redis;
+    let mut redis_conn = if let Ok(r) = redis_client.get_connection() {
+        r
+    } else {
+        let response = Response::fail_response("Unable to find file".to_string());
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(response));
+    };
+
+    let redis_response: String = redis_conn.get(&lib_file).unwrap_or_default();
+    tracing::debug!("file {:#?}", redis_response);
+    let wasm_file = redis_decoder(&redis_response);
+
+    if wasm_file.clone().len() == 0 {
+        let response = Response::fail_response("Unable to parse compiled file".to_string());
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(response));
+    }
 
     // Creating the keypair from private keys
     let private_key = PrivateKey::from_string(secret_key);
@@ -27,11 +45,10 @@ pub async fn deploy_contract(
                         secret: secret_key,
                         public,
                     };
-                    let p = std::path::PathBuf::from(lib_file);
                     let contract_deployer = state
                         .application_service
                         .get_contract_deployment_service()
-                        .new_contract_deployer(p, kp);
+                        .new_contract_deployer(wasm_file, kp);
 
                     match contract_deployer.run().await {
                         Ok(data) => {

@@ -1,6 +1,5 @@
 use std::array::TryFromSliceError;
 use std::num::ParseIntError;
-use std::path::PathBuf;
 
 use ed25519_dalek::Keypair;
 use hex::FromHexError;
@@ -17,15 +16,15 @@ use soroban_env_host::xdr::{
 };
 use soroban_env_host::HostError;
 
+use crate::utils::client::Client;
 use crate::utils::constants::{NETWORK_PHRASE, NETWORK_URL};
 use crate::utils::helper::{contract_hash, id_from_str};
-use crate::{utils::client::Client, utils::wasm};
 
 pub struct ContractDepoymentService {}
 
 impl ContractDepoymentService {
-    pub fn new_contract_deployer(&self, wasm_path: PathBuf, keypair: Keypair) -> ContractDeployer {
-        ContractDeployer::new(Some(wasm_path), keypair)
+    pub fn new_contract_deployer(&self, wasm: Vec<u8>, keypair: Keypair) -> ContractDeployer {
+        ContractDeployer::new(Some(wasm), keypair)
     }
 }
 
@@ -33,8 +32,6 @@ impl ContractDepoymentService {
 pub enum Error {
     #[error(transparent)]
     Host(#[from] HostError),
-    #[error(transparent)]
-    Wasm(#[from] wasm::Error),
     #[error("error parsing int: {0}")]
     ParseIntError(#[from] ParseIntError),
     #[error("internal conversion error: {0}")]
@@ -57,7 +54,7 @@ pub enum Error {
 }
 
 pub struct ContractDeployer {
-    pub wasm: Option<std::path::PathBuf>,
+    pub wasm: Option<Vec<u8>>,
     wasm_hash: Option<String>,
     salt: Option<String>,
     pub fee: crate::models::fee::Args,
@@ -65,7 +62,7 @@ pub struct ContractDeployer {
 }
 
 impl ContractDeployer {
-    pub fn new(wasm: Option<std::path::PathBuf>, keypair: Keypair) -> ContractDeployer {
+    pub fn new(wasm: Option<Vec<u8>>, keypair: Keypair) -> ContractDeployer {
         ContractDeployer {
             wasm,
             wasm_hash: None,
@@ -81,7 +78,7 @@ impl ContractDeployer {
 
     pub async fn run_and_get_contract_id(&self) -> Result<String, Error> {
         let wasm_hash = if let Some(wasm) = &self.wasm {
-            let hash = self.run_and_get_hash(wasm).await?;
+            let hash = self.run_and_get_hash(wasm.clone()).await?;
             hex::encode(hash)
         } else {
             self.wasm_hash
@@ -132,9 +129,7 @@ impl ContractDeployer {
         Ok(gg)
     }
 
-    pub async fn run_and_get_hash(&self, path: &PathBuf) -> Result<Hash, Error> {
-        let gg = wasm::Args { wasm: path.clone() };
-        let contract = gg.read()?;
+    pub async fn run_and_get_hash(&self, contract: Vec<u8>) -> Result<Hash, Error> {
         self.run_against_rpc_server_install(contract).await
     }
 
