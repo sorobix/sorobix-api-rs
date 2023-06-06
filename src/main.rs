@@ -17,7 +17,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::{
     handlers::account_handler::generate_new_account,
-    handlers::contract_handler::{compile_contract, deploy_contract, invoke_contract},
+    handlers::contract_handler::{deploy_contract, invoke_contract},
     models::router_state::RouterState,
     services::application_service::ApplicationService,
 };
@@ -40,7 +40,6 @@ async fn main() {
     let app = Router::new()
         .route("/", get(root))
         .route("/account", post(generate_new_account))
-        .route("/compile", post(compile_contract))
         .route("/deploy", post(deploy_contract))
         .route("/invoke", post(invoke_contract))
         .layer(CorsLayer::permissive())

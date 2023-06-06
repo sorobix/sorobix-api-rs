@@ -3,54 +3,10 @@ use ed25519_dalek::Keypair;
 use std::sync::Arc;
 use stellar_strkey::ed25519::PrivateKey;
 
-use crate::models::compile_contract::{CompileContractRequest, CompileContractResponse};
 use crate::models::deploy_contract::{DeployContractRequest, DeployContractResponse};
 use crate::models::invoke_contract::{InvokeContractRequest, InvokeContractResponse};
 use crate::models::response::{Response, ResponseEnum};
 use crate::models::router_state::RouterState;
-
-pub async fn compile_contract(
-    State(state): State<Arc<RouterState>>,
-    Json(payload): Json<CompileContractRequest>,
-) -> (StatusCode, Json<Response>) {
-    let data: &str = &payload.lib_file.as_str();
-
-    let compiled_contract = state
-        .application_service
-        .get_contract_service()
-        .compile_contract(data);
-
-    match compiled_contract {
-        Ok(data) => match data.compiler_stdcode {
-            Some(0) => {
-                let compilation_response = CompileContractResponse {
-                    compiler_output: data.compiler_stderr,
-                };
-                let response = Response::success_response(
-                    "compilation successful!".to_string(),
-                    ResponseEnum::CompileContractResponse(compilation_response),
-                );
-                (StatusCode::OK, Json(response))
-            }
-            Some(_) => {
-                let response = Response::fail_response(
-                    "compilation failed: ".to_string() + &data.compiler_stderr,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-            None => {
-                let response = Response::fail_response(
-                    "compilation failed: ".to_string() + &data.compiler_stderr,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-        },
-        Err(error) => {
-            let response = Response::fail_response(error.to_string());
-            (StatusCode::BAD_REQUEST, Json(response))
-        }
-    }
-}
 
 pub async fn deploy_contract(
     State(state): State<Arc<RouterState>>,

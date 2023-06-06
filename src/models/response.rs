@@ -1,8 +1,8 @@
 use serde::Serialize;
 
+use super::deploy_contract::DeployContractResponse;
 pub use super::generate_account;
 use super::invoke_contract::InvokeContractResponse;
-use super::{compile_contract::CompileContractResponse, deploy_contract::DeployContractResponse};
 #[derive(Serialize)]
 pub struct Response {
     status: bool,
@@ -14,7 +14,6 @@ pub struct Response {
 pub enum ResponseEnum {
     GenerateAccountResponse(generate_account::GenerateAccountResponse),
     String(String),
-    CompileContractResponse(CompileContractResponse),
     DeployContractResponse(DeployContractResponse),
     InvokeContractResponse(InvokeContractResponse),
 }
