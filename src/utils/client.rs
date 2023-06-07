@@ -30,6 +30,13 @@ pub type LogEvents = fn(
 ) -> ();
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
+pub struct GetLedgerEntriesResponse {
+    pub entries: Vec<LedgerEntryResult>,
+    #[serde(rename = "latestLedger")]
+    pub latest_ledger: String,
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct Cost {
     #[serde(
         rename = "cpuInsns",
@@ -155,8 +162,9 @@ pub struct SendTransactionResponse {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct LedgerEntryResult {
+    pub key: String,
     pub xdr: String,
-    #[serde(rename = "lastModifiedLedger")]
+    #[serde(rename = "lastModifiedLedgerSeq")]
     pub last_modified_ledger: String,
 }
 
@@ -311,6 +319,24 @@ impl Client {
             .await?;
         let tx = crate::utils::helper::sign_transaction(key, &unsigned_tx, network_passphrase)?;
         self.send_transaction(&tx).await
+    }
+
+    pub async fn get_ledger_entries(
+        &self,
+        keys: Vec<LedgerKey>,
+    ) -> Result<GetLedgerEntriesResponse, Error> {
+        let mut base64_keys: Vec<String> = vec![];
+        for k in &keys {
+            let base64_result = k.to_xdr_base64();
+            if base64_result.is_err() {
+                return Err(Error::Xdr(XdrError::Invalid));
+            }
+            base64_keys.push(k.to_xdr_base64().unwrap());
+        }
+        Ok(self
+            .client()?
+            .request("getLedgerEntries", rpc_params![base64_keys])
+            .await?)
     }
 
     pub async fn send_transaction(

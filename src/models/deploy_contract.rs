@@ -8,7 +8,6 @@ pub struct DeployContractRequest {
 #[derive(Serialize)]
 pub struct DeployContractResponse {
     pub contract_hash: String,
-    pub compiler_output: String,
 }
 
 #[derive(Deserialize, Debug)]

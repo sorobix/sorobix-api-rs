@@ -36,7 +36,7 @@ pub fn assemble(
 
     // update the fees of the actual transaction to meet the minimum resource fees.
     let mut fee = tx.fee;
-    let classic_transaction_fees = crate::models::fee::Args { fee: 100 }.fee;
+    let classic_transaction_fees = crate::models::fee::Args::default().fee;
     if fee < classic_transaction_fees + simulation.min_resource_fee {
         fee = classic_transaction_fees + simulation.min_resource_fee;
     }

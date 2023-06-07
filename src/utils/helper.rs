@@ -95,7 +95,6 @@ pub fn redis_decoder(i: &str) -> Vec<u8> {
         if !res.status {
             tracing::debug!("the deployed contract is false")
         }
-        tracing::debug!("wasm: {}", res.wasm);
         match base64::decode(res.wasm) {
             Ok(d) => return d,
             Err(err) => {
