@@ -12,17 +12,3 @@ pub struct InvokeContractRequest {
 pub struct InvokeContractResponse {
     pub result: String,
 }
-
-pub struct InvokeContract {
-    pub result: String,
-    pub error_message: String,
-}
-
-impl InvokeContract {
-    pub fn new(result: String, error_message: String) -> InvokeContract {
-        InvokeContract {
-            result,
-            error_message,
-        }
-    }
-}

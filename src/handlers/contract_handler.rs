@@ -1,54 +1,14 @@
 use axum::{extract::State, http::StatusCode, Json};
+use ed25519_dalek::Keypair;
+use redis::Commands;
 use std::sync::Arc;
+use stellar_strkey::ed25519::PrivateKey;
 
-use crate::models::compile_contract::{CompileContractRequest, CompileContractResponse};
 use crate::models::deploy_contract::{DeployContractRequest, DeployContractResponse};
 use crate::models::invoke_contract::{InvokeContractRequest, InvokeContractResponse};
 use crate::models::response::{Response, ResponseEnum};
 use crate::models::router_state::RouterState;
-
-pub async fn compile_contract(
-    State(state): State<Arc<RouterState>>,
-    Json(payload): Json<CompileContractRequest>,
-) -> (StatusCode, Json<Response>) {
-    let data: &str = &payload.lib_file.as_str();
-
-    let compiled_contract = state
-        .application_service
-        .get_contract_service()
-        .compile_contract(data);
-
-    match compiled_contract {
-        Ok(data) => match data.compiler_stdcode {
-            Some(0) => {
-                let compilation_response = CompileContractResponse {
-                    compiler_output: data.compiler_stderr,
-                };
-                let response = Response::success_response(
-                    "compilation successful!".to_string(),
-                    ResponseEnum::CompileContractResponse(compilation_response),
-                );
-                (StatusCode::OK, Json(response))
-            }
-            Some(_) => {
-                let response = Response::fail_response(
-                    "compilation failed: ".to_string() + &data.compiler_stderr,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-            None => {
-                let response = Response::fail_response(
-                    "compilation failed: ".to_string() + &data.compiler_stderr,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-        },
-        Err(error) => {
-            let response = Response::fail_response(error.to_string());
-            (StatusCode::BAD_REQUEST, Json(response))
-        }
-    }
-}
+use crate::utils::helper::redis_decoder;
 
 pub async fn deploy_contract(
     State(state): State<Arc<RouterState>>,
@@ -56,33 +16,62 @@ pub async fn deploy_contract(
 ) -> (StatusCode, Json<Response>) {
     let lib_file: &str = &payload.lib_file.as_str();
     let secret_key: &str = &payload.secret_key.as_str();
+    let redis_client = &state.application_service.redis;
+    let mut redis_conn = if let Ok(r) = redis_client.get_connection() {
+        r
+    } else {
+        let response = Response::fail_response("Unable to find file".to_string());
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(response));
+    };
 
-    let deployment = state
-        .application_service
-        .get_contract_service()
-        .deploy_contract(lib_file, secret_key)
-        .await;
+    let redis_response: String = redis_conn.get(&lib_file).unwrap_or_default();
+    let wasm_file = redis_decoder(&redis_response);
 
-    match deployment {
-        Ok(data) => match data.deployment_status {
-            true => {
-                let compilation_response = DeployContractResponse {
-                    contract_hash: data.contract_hash,
-                    compiler_output: data.compiler_stderr.to_string(),
-                };
-                let response = Response::success_response(
-                    "deployment successful!".to_string(),
-                    ResponseEnum::DeployContractResponse(compilation_response),
-                );
-                return (StatusCode::OK, Json(response));
+    if wasm_file.clone().len() == 0 {
+        let response = Response::fail_response("Unable to parse compiled file".to_string());
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(response));
+    }
+
+    // Creating the keypair from private keys
+    let private_key = PrivateKey::from_string(secret_key);
+    match private_key {
+        Ok(pkey) => {
+            let secret = ed25519_dalek::SecretKey::from_bytes(&pkey.0);
+            match secret {
+                Ok(secret_key) => {
+                    let public = (&secret_key).into();
+                    let kp = Keypair {
+                        secret: secret_key,
+                        public,
+                    };
+                    let contract_deployer = state
+                        .application_service
+                        .get_contract_deployment_service()
+                        .new_contract_deployer(wasm_file, kp);
+
+                    match contract_deployer.run().await {
+                        Ok(data) => {
+                            let deploy_response = DeployContractResponse {
+                                contract_hash: String::from(&data),
+                            };
+                            let response = Response::success_response(
+                                "deployment successful!".to_string(),
+                                ResponseEnum::DeployContractResponse(deploy_response),
+                            );
+                            (StatusCode::OK, Json(response))
+                        }
+                        Err(error) => {
+                            let response = Response::fail_response(error.to_string());
+                            (StatusCode::INTERNAL_SERVER_ERROR, Json(response))
+                        }
+                    }
+                }
+                Err(error) => {
+                    let response = Response::fail_response(error.to_string());
+                    (StatusCode::BAD_REQUEST, Json(response))
+                }
             }
-            false => {
-                let response = Response::fail_response(
-                    "deployment failed: ".to_string() + &data.error_message,
-                );
-                (StatusCode::BAD_REQUEST, Json(response))
-            }
-        },
+        }
         Err(error) => {
             let response = Response::fail_response(error.to_string());
             (StatusCode::BAD_REQUEST, Json(response))
@@ -94,33 +83,44 @@ pub async fn invoke_contract(
     State(state): State<Arc<RouterState>>,
     Json(payload): Json<InvokeContractRequest>,
 ) -> (StatusCode, Json<Response>) {
-    let contract_id: &str = &payload.contract_id.as_str();
-    let contract_function: &str = &payload.contract_function.as_str();
     let secret_key: &str = &payload.secret_key.as_str();
-    let contract_args: &Vec<String> = &payload.contract_arguments;
 
-    let invokation = state
-        .application_service
-        .get_contract_service()
-        .invoke_contract(contract_id, contract_function, secret_key, contract_args)
-        .await;
-
-    match invokation {
-        Ok(data) => {
-            if data.error_message.len() == 0 {
-                let invokation_response = InvokeContractResponse {
-                    result: data.result,
-                };
-                let response = Response::success_response(
-                    "contract invokation successful".to_string(),
-                    ResponseEnum::InvokeContractResponse(invokation_response),
-                );
-                return (StatusCode::OK, Json(response));
-            } else {
-                let response = Response::fail_response(
-                    "contract invokation failed".to_string() + &data.error_message,
-                );
-                return (StatusCode::BAD_REQUEST, Json(response));
+    let private_key = PrivateKey::from_string(secret_key);
+    match private_key {
+        Ok(pkey) => {
+            let secret = ed25519_dalek::SecretKey::from_bytes(&pkey.0);
+            match secret {
+                Ok(secret_key) => {
+                    let public = (&secret_key).into();
+                    let kp = Keypair {
+                        secret: secret_key,
+                        public,
+                    };
+                    let mut contract_args = payload.contract_arguments;
+                    contract_args.insert(0, payload.contract_function.clone());
+                    let invoker_service = state
+                        .application_service
+                        .contract_invoker_service
+                        .new_contract_invoker(payload.contract_id.clone(), kp, contract_args);
+                    match invoker_service.run_against_rpc_server().await {
+                        Ok(res) => {
+                            let invokation_res = InvokeContractResponse { result: res };
+                            let response = Response::success_response(
+                                "invokation successful".to_string(),
+                                ResponseEnum::InvokeContractResponse(invokation_res),
+                            );
+                            return (StatusCode::OK, Json(response));
+                        }
+                        Err(err) => {
+                            let response = Response::fail_response(err.to_string());
+                            return (StatusCode::BAD_REQUEST, Json(response));
+                        }
+                    }
+                }
+                Err(error) => {
+                    let response = Response::fail_response(error.to_string());
+                    return (StatusCode::BAD_REQUEST, Json(response));
+                }
             }
         }
         Err(error) => {

@@ -1,13 +1,4 @@
-FROM rust:1.68
-RUN rustup target add wasm32-unknown-unknown
-RUN curl -LJO https://github.com/stellar/soroban-tools/releases/download/v0.7.1/soroban-cli-0.7.1-x86_64-unknown-linux-gnu
-RUN mv soroban-cli-0.7.1-x86_64-unknown-linux-gnu soroban
-RUN chmod +x soroban
-RUN mv soroban /usr/local/bin
-RUN curl -LJO https://github.com/mozilla/sccache/releases/download/v0.4.1/sccache-v0.4.1-x86_64-unknown-linux-musl.tar.gz
-RUN tar -xvf sccache-v0.4.1-x86_64-unknown-linux-musl.tar.gz
-RUN mv sccache-v0.4.1-x86_64-unknown-linux-musl/sccache /usr/local/bin
-ENV RUSTC_WRAPPER=/usr/local/bin/sccache
+FROM rust:latest
 WORKDIR /sorobix-api-rs
 COPY . .
 RUN cargo build --release
