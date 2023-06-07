@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  sorobix-api:
+    image: sorobix-api-rs
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - REDIS=redis:6379
+    ports:
+      - 3000:3000
+    depends_on:
+      - redis

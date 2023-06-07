@@ -30,13 +30,17 @@ async fn main() {
             "sorobix_api_rs=debug,tower_http=debug,server=debug",
         )
     }
+    let redis = std::env::var("REDIS").unwrap_or("localhost".to_string());
     println!("Sorobix API RS Booted");
     tracing_subscriber::fmt::init();
-    let client = if let Ok(cl) = redis::Client::open("redis://localhost/") {
+    let client = if let Ok(cl) = redis::Client::open(format!("redis://{}", redis)) {
         cl
     } else {
         panic!("Unable to create redis client");
     };
+    if let Err(err) = &client.get_connection() {
+        tracing::error!("Unable to connect to redis: {:#?}", err);
+    }
     let application_service = ApplicationService::new(client);
     let application_state = RouterState {
         application_service,
