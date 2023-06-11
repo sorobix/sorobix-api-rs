@@ -122,6 +122,7 @@ impl ContractInvoker {
     ) -> Result<(String, Spec, ScVec), Error> {
         let spec = Spec(Some(spec_entries.to_vec()));
         let mut cmd = clap::Command::new(self.contract.clone())
+            .ignore_errors(true)
             .no_binary_name(true)
             .term_width(300)
             .max_term_width(300);
@@ -146,6 +147,8 @@ impl ContractInvoker {
                         .unwrap_or_default()
                         .to_string_lossy()
                         .to_string();
+                    // TODO: this is not random uncommented code, this is address parsing, cannot input
+                    // address yet
                     // if matches!(i.type_, ScSpecTypeDef::Address) {
                     //     let cmd = crate::commands::config::identity::address::Cmd {
                     //         name: Some(s.clone()),
