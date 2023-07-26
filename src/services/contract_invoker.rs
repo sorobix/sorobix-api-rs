@@ -9,29 +9,31 @@ use hex::FromHexError;
 use soroban_env_host::{
     budget::Budget,
     events::HostEvent,
+    storage::Storage,
     xdr::{
-        self, ContractAuth, ContractCodeEntry, ContractDataEntry, Error as XdrError, HostFunction,
-        HostFunctionArgs, InvokeHostFunctionOp, InvokeHostFunctionResult, LedgerEntryData,
-        LedgerFootprint, LedgerKey, LedgerKeyContractCode, LedgerKeyContractData, Memo,
-        MuxedAccount, Operation, OperationBody, OperationResult, OperationResultTr, Preconditions,
-        ReadXdr, ScBytes, ScContractExecutable, ScSpecEntry, ScSpecFunctionV0, ScSpecTypeDef,
-        ScVal, ScVec, SequenceNumber, Transaction, TransactionExt, TransactionResultResult,
-        Uint256, VecM,
+        self, AccountId, Error as XdrError, Hash, HostFunction, InvokeHostFunctionOp,
+        LedgerEntryData, LedgerFootprint, LedgerKey, LedgerKeyAccount, Memo, MuxedAccount,
+        Operation, OperationBody, Preconditions, PublicKey, ScAddress, ScSpecEntry,
+        ScSpecFunctionV0, ScSpecTypeDef, ScVal, ScVec, SequenceNumber, SorobanAddressCredentials,
+        SorobanAuthorizationEntry, SorobanCredentials, Transaction, TransactionExt, Uint256, VecM,
     },
-    HostError,
+    DiagnosticLevel, Host, HostError,
 };
 use soroban_sdk::token;
 use soroban_spec::read::FromWasmError;
+use soroban_spec_tools::Spec;
 
 use crate::models;
 use crate::utils::client::Client;
 use crate::utils::constants::{NETWORK_PHRASE, NETWORK_URL};
-use crate::utils::strval::{self, Spec};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("parsing argument {arg}: {error}")]
-    CannotParseArg { arg: String, error: strval::Error },
+    CannotParseArg {
+        arg: String,
+        error: soroban_spec_tools::Error,
+    },
     #[error("cannot add contract to ledger entries: {0}")]
     CannotAddContractToLedgerEntries(XdrError),
     #[error(transparent)]
@@ -58,7 +60,10 @@ pub enum Error {
     #[error("argument count ({current}) surpasses maximum allowed count ({maximum})")]
     MaxNumberOfArgumentsReached { current: usize, maximum: usize },
     #[error("cannot print result {result:?}: {error}")]
-    CannotPrintResult { result: ScVal, error: strval::Error },
+    CannotPrintResult {
+        result: ScVal,
+        error: soroban_spec_tools::Error,
+    },
     #[error("xdr processing error: {0}")]
     Xdr(#[from] XdrError),
     #[error("error parsing int: {0}")]
@@ -66,7 +71,7 @@ pub enum Error {
     #[error(transparent)]
     Rpc(#[from] crate::utils::client::Error),
     #[error(transparent)]
-    StrVal(#[from] crate::utils::strval::Error),
+    StrVal(#[from] soroban_spec_tools::Error),
     #[error("unexpected contract code data type: {0:?}")]
     UnexpectedContractCodeDataType(LedgerEntryData),
     #[error("missing operation result")]
@@ -171,7 +176,7 @@ impl ContractInvoker {
 
         // Add the contract ID and the function name to the arguments
         let mut complete_args = vec![
-            ScVal::Bytes(ScBytes(contract_id.try_into()?)),
+            ScVal::Address(ScAddress::Contract(Hash(contract_id))),
             ScVal::Symbol(
                 function
                     .try_into()
@@ -221,8 +226,7 @@ impl ContractInvoker {
         let spec_entries = if let Some(spec) = self.spec_entries()? {
             spec
         } else {
-            // async closures are not yet stable
-            get_remote_contract_spec_entries(&client, &contract_id).await?
+            client.get_remote_contract_spec(&contract_id).await?
         };
 
         // Get the ledger footprint
@@ -235,7 +239,7 @@ impl ContractInvoker {
             &key,
         )?;
 
-        let (result, events) = client
+        let (result, meta, events) = client
             .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, Some(log_events))
             .await?;
 
@@ -243,22 +247,11 @@ impl ContractInvoker {
         if !events.is_empty() {
             tracing::debug!(?events);
         }
-        let res = match result.result {
-            TransactionResultResult::TxSuccess(ops) => {
-                if ops.is_empty() {
-                    return Err(Error::MissingOperationResult);
-                }
-                match &ops[0] {
-                    OperationResult::OpInner(OperationResultTr::InvokeHostFunction(
-                        InvokeHostFunctionResult::Success(r),
-                    )) => r[0].clone(),
-                    _ => return Err(Error::MissingOperationResult),
-                }
-            }
-            _ => return Err(Error::MissingOperationResult),
+        let xdr::TransactionMeta::V3(xdr::TransactionMetaV3{soroban_meta: Some(xdr::SorobanTransactionMeta{return_value, ..}), ..}) = meta else {
+            return Err(Error::MissingOperationResult);
         };
 
-        output_to_string(&spec, &res, &function)
+        output_to_string(&spec, &return_value, &function)
     }
 }
 
@@ -285,11 +278,8 @@ fn build_invoke_contract_tx(
     let op = Operation {
         source_account: None,
         body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-            functions: vec![HostFunction {
-                args: HostFunctionArgs::InvokeContract(parameters),
-                auth: VecM::default(),
-            }]
-            .try_into()?,
+            host_function: HostFunction::InvokeContract(parameters),
+            auth: VecM::default(),
         }),
     };
     Ok(Transaction {
@@ -303,56 +293,9 @@ fn build_invoke_contract_tx(
     })
 }
 
-async fn get_remote_contract_spec_entries(
-    client: &Client,
-    contract_id: &[u8; 32],
-) -> Result<Vec<ScSpecEntry>, Error> {
-    // Get the contract from the network
-    let contract_key = LedgerKey::ContractData(LedgerKeyContractData {
-        contract_id: xdr::Hash(*contract_id),
-        key: ScVal::LedgerKeyContractExecutable,
-    });
-
-    let contract_ref = client.get_ledger_entries(Vec::from([contract_key])).await?;
-    if contract_ref.entries.is_empty() {
-        return Err(Error::MissingResult);
-    }
-    let contract_ref_entry = &contract_ref.entries[0];
-    Ok(
-        match LedgerEntryData::from_xdr_base64(&contract_ref_entry.xdr)? {
-            LedgerEntryData::ContractData(ContractDataEntry {
-                val: ScVal::ContractExecutable(ScContractExecutable::WasmRef(hash)),
-                ..
-            }) => {
-                let code_key = LedgerKey::ContractCode(LedgerKeyContractCode { hash });
-                let contract_data = client.get_ledger_entries(Vec::from([code_key])).await?;
-                if contract_data.entries.is_empty() {
-                    return Err(Error::MissingResult);
-                }
-                let contract_data_entry = &contract_data.entries[0];
-                match LedgerEntryData::from_xdr_base64(&contract_data_entry.xdr)? {
-                    LedgerEntryData::ContractCode(ContractCodeEntry { code, .. }) => {
-                        let code_vec: Vec<u8> = code.into();
-                        soroban_spec::read::from_wasm(&code_vec)
-                            .map_err(Error::CannotParseContractSpec)?
-                    }
-                    scval => return Err(Error::UnexpectedContractCodeDataType(scval)),
-                }
-            }
-            LedgerEntryData::ContractData(ContractDataEntry {
-                val: ScVal::ContractExecutable(ScContractExecutable::Token),
-                ..
-            }) => soroban_spec::read::parse_raw(&token::Spec::spec_xdr())
-                .map_err(FromWasmError::Parse)
-                .map_err(Error::CannotParseContractSpec)?,
-            scval => return Err(Error::UnexpectedContractCodeDataType(scval)),
-        },
-    )
-}
-
 fn log_events(
     footprint: &LedgerFootprint,
-    auth: &Vec<VecM<ContractAuth>>,
+    auth: &[VecM<SorobanAuthorizationEntry>],
     events: &[HostEvent],
     budget: Option<&Budget>,
 ) {
@@ -367,7 +310,7 @@ fn build_custom_cmd(name: &str, spec: &Spec) -> Result<clap::Command, Error> {
     let inputs_map = &func
         .inputs
         .iter()
-        .map(|i| (i.name.to_string().unwrap_or_default(), i.type_.clone()))
+        .map(|i| (i.name.to_string().unwrap(), i.type_.clone()))
         .collect::<HashMap<String, ScSpecTypeDef>>();
     let name: &'static str = Box::leak(name.to_string().into_boxed_str());
     let mut cmd = clap::Command::new(name)
@@ -378,7 +321,7 @@ fn build_custom_cmd(name: &str, spec: &Spec) -> Result<clap::Command, Error> {
     if kebab_name != name {
         cmd = cmd.alias(kebab_name);
     }
-    let func = spec.find_function(name)?;
+    let func = spec.find_function(name).unwrap();
     let doc: &'static str = Box::leak(func.doc.to_string_lossy().into_boxed_str());
     cmd = cmd.about(Some(doc));
     for (name, type_) in inputs_map.iter() {
@@ -388,7 +331,7 @@ fn build_custom_cmd(name: &str, spec: &Spec) -> Result<clap::Command, Error> {
             .alias(name.to_kebab_case())
             .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
-            .long_help(spec.doc(name, type_)?);
+            .long_help(spec.doc(name, type_).unwrap());
 
         if let Some(value_name) = spec.arg_value_name(type_, 0) {
             let value_name: &'static str = Box::leak(value_name.into_boxed_str());

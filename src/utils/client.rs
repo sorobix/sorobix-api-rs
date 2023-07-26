@@ -6,12 +6,13 @@ use soroban_env_host::{
     budget::Budget,
     events::HostEvent,
     xdr::{
-        AccountEntry, AccountId, ContractAuth, DiagnosticEvent, Error as XdrError, LedgerEntryData,
-        LedgerFootprint, LedgerKey, LedgerKeyAccount, PublicKey, ReadXdr, Transaction,
-        TransactionEnvelope, TransactionMeta, TransactionResult, TransactionV1Envelope, Uint256,
-        VecM, WriteXdr,
+        self, AccountEntry, AccountId, ContractDataEntry, DiagnosticEvent, Error as XdrError,
+        LedgerEntryData, LedgerFootprint, LedgerKey, LedgerKeyAccount, PublicKey, ReadXdr,
+        SorobanAuthorizationEntry, Transaction, TransactionEnvelope, TransactionMeta,
+        TransactionMetaV3, TransactionResult, TransactionV1Envelope, Uint256, VecM, WriteXdr,
     },
 };
+use soroban_sdk::token;
 use std::{
     str::FromStr,
     time::{Duration, Instant},
@@ -20,18 +21,20 @@ use tokio::time::sleep;
 
 use crate::utils::transaction::assemble;
 
+use super::contract_spec;
+
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
 pub type LogEvents = fn(
     footprint: &LedgerFootprint,
-    auth: &Vec<VecM<ContractAuth>>,
+    auth: &[VecM<SorobanAuthorizationEntry>],
     events: &[HostEvent],
     budget: Option<&Budget>,
 ) -> ();
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct GetLedgerEntriesResponse {
-    pub entries: Vec<LedgerEntryResult>,
+    pub entries: Option<Vec<LedgerEntryResult>>,
     #[serde(rename = "latestLedger")]
     pub latest_ledger: String,
 }
@@ -116,6 +119,10 @@ pub enum Error {
         "unsupported operation type, must be only one InvokeHostFunctionOp in the transaction."
     )]
     UnsupportedOperationType,
+    #[error("unexpected contract code data type: {0:?}")]
+    UnexpectedContractCodeDataType(LedgerEntryData),
+    #[error(transparent)]
+    CouldNotParseContractSpec(#[from] contract_spec::Error),
 }
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
@@ -177,15 +184,17 @@ pub struct Client {
     base_url: String,
 }
 
-fn extract_events(tx_meta: TransactionMeta) -> Vec<DiagnosticEvent> {
+fn extract_events(tx_meta: &TransactionMeta) -> Vec<DiagnosticEvent> {
     match tx_meta {
-        TransactionMeta::V3(v3) => {
+        TransactionMeta::V3(TransactionMetaV3 {
+            soroban_meta: Some(meta),
+            ..
+        }) => {
             // NOTE: we assume there can only be one operation, since we only send one
-            if v3.diagnostic_events.len() == 1 {
-                v3.diagnostic_events[0].events.clone().into()
-            } else if v3.events.len() == 1 {
-                v3.events[0]
-                    .events
+            if meta.diagnostic_events.len() == 1 {
+                meta.diagnostic_events.clone().into()
+            } else if meta.events.len() == 1 {
+                meta.events
                     .iter()
                     .map(|e| DiagnosticEvent {
                         in_successful_contract_call: true,
@@ -313,14 +322,13 @@ impl Client {
         key: &ed25519_dalek::Keypair,
         network_passphrase: &str,
         log_events: Option<LogEvents>,
-    ) -> Result<(TransactionResult, Vec<DiagnosticEvent>), Error> {
+    ) -> Result<(TransactionResult, TransactionMeta, Vec<DiagnosticEvent>), Error> {
         let unsigned_tx = self
             .prepare_transaction(tx_without_preflight, log_events)
             .await?;
         let tx = crate::utils::helper::sign_transaction(key, &unsigned_tx, network_passphrase)?;
         self.send_transaction(&tx).await
     }
-
     pub async fn get_ledger_entries(
         &self,
         keys: Vec<LedgerKey>,
@@ -338,11 +346,10 @@ impl Client {
             .request("getLedgerEntries", rpc_params![base64_keys])
             .await?)
     }
-
     pub async fn send_transaction(
         &self,
         tx: &TransactionEnvelope,
-    ) -> Result<(TransactionResult, Vec<DiagnosticEvent>), Error> {
+    ) -> Result<(TransactionResult, TransactionMeta, Vec<DiagnosticEvent>), Error> {
         let client = self.client()?;
         tracing::trace!(?tx);
         let SendTransactionResponse {
@@ -376,13 +383,17 @@ impl Client {
                 "SUCCESS" => {
                     // TODO: the caller should probably be printing this
                     tracing::trace!(?response);
-                    let result_xdr_b64 = response.result_xdr.ok_or(Error::MissingResult)?;
-                    let result = TransactionResult::from_xdr_base64(result_xdr_b64)?;
-                    let events = match response.result_meta_xdr {
-                        None => Vec::new(),
-                        Some(m) => extract_events(TransactionMeta::from_xdr_base64(m)?),
-                    };
-                    return Ok((result, events));
+                    let result = TransactionResult::from_xdr_base64(
+                        response.result_xdr.clone().ok_or(Error::MissingResult)?,
+                    )?;
+                    let meta = TransactionMeta::from_xdr_base64(
+                        response
+                            .result_meta_xdr
+                            .clone()
+                            .ok_or(Error::MissingResult)?,
+                    )?;
+                    let events = extract_events(&meta);
+                    return Ok((result, meta, events));
                 }
                 "FAILED" => {
                     tracing::error!(?response);
@@ -400,6 +411,76 @@ impl Client {
                 return Err(Error::TransactionSubmissionTimeout);
             }
             sleep(Duration::from_secs(1)).await;
+        }
+    }
+
+    pub async fn get_contract_data(
+        &self,
+        contract_id: &[u8; 32],
+    ) -> Result<ContractDataEntry, Error> {
+        // Get the contract from the network
+        let contract_key = LedgerKey::ContractData(xdr::LedgerKeyContractData {
+            contract: xdr::ScAddress::Contract(xdr::Hash(*contract_id)),
+            key: xdr::ScVal::LedgerKeyContractInstance,
+            durability: xdr::ContractDataDurability::Persistent,
+            body_type: xdr::ContractEntryBodyType::DataEntry,
+        });
+        let contract_ref = self.get_ledger_entries(Vec::from([contract_key])).await?;
+        let entries = contract_ref.entries.unwrap_or_default();
+        if entries.is_empty() {
+            return Err(Error::MissingResult);
+        }
+        let contract_ref_entry = &entries[0];
+        match LedgerEntryData::from_xdr_base64(&contract_ref_entry.xdr)? {
+            LedgerEntryData::ContractData(contract_data) => Ok(contract_data),
+            scval => Err(Error::UnexpectedContractCodeDataType(scval)),
+        }
+    }
+
+    pub async fn get_remote_wasm_from_hash(&self, hash: xdr::Hash) -> Result<Vec<u8>, Error> {
+        let code_key = LedgerKey::ContractCode(xdr::LedgerKeyContractCode {
+            hash,
+            body_type: xdr::ContractEntryBodyType::DataEntry,
+        });
+        let contract_data = self.get_ledger_entries(Vec::from([code_key])).await?;
+        let entries = contract_data.entries.unwrap_or_default();
+        if entries.is_empty() {
+            return Err(Error::MissingResult);
+        }
+        let contract_data_entry = &entries[0];
+        match LedgerEntryData::from_xdr_base64(&contract_data_entry.xdr)? {
+            LedgerEntryData::ContractCode(xdr::ContractCodeEntry {
+                body: xdr::ContractCodeEntryBody::DataEntry(code),
+                ..
+            }) => Ok(code.into()),
+            scval => Err(Error::UnexpectedContractCodeDataType(scval)),
+        }
+    }
+
+    pub async fn get_remote_contract_spec(
+        &self,
+        contract_id: &[u8; 32],
+    ) -> Result<Vec<xdr::ScSpecEntry>, Error> {
+        let contract_data = self.get_contract_data(contract_id).await?;
+        let xdr::ContractDataEntryBody::DataEntry(data) = contract_data.body else {
+            return Err(Error::Xdr(XdrError::Invalid));
+        };
+        match data.val {
+            xdr::ScVal::ContractInstance(xdr::ScContractInstance {
+                executable: xdr::ContractExecutable::Wasm(hash),
+                ..
+            }) => Ok(contract_spec::ContractSpec::new(
+                &self.get_remote_wasm_from_hash(hash).await?,
+            )
+            .map_err(Error::CouldNotParseContractSpec)?
+            .spec),
+            xdr::ScVal::ContractInstance(xdr::ScContractInstance {
+                executable: xdr::ContractExecutable::Token,
+                ..
+            }) => Ok(soroban_spec::read::parse_raw(
+                &token::StellarAssetSpec::spec_xdr(),
+            )?),
+            _ => Err(Error::Xdr(XdrError::Invalid)),
         }
     }
 }

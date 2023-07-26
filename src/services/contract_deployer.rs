@@ -1,20 +1,19 @@
-use std::array::TryFromSliceError;
-use std::num::ParseIntError;
+use std::{array::TryFromSliceError, num::ParseIntError};
 
 use ed25519_dalek::Keypair;
 use hex::FromHexError;
 use rand::Rng;
 use sha2::{Digest, Sha256};
-use soroban_env_host::xdr::{
-    AccountId, ContractId, CreateContractArgs, Error as XdrError, Hash, HashIdPreimage,
-    HostFunction, InvokeHostFunctionOp, Memo, MuxedAccount, Operation, OperationBody,
-    Preconditions, PublicKey, SequenceNumber, Transaction, TransactionExt, Uint256, VecM, WriteXdr,
+use soroban_env_host::{
+    xdr::{
+        AccountId, ContractExecutable, ContractIdPreimage, ContractIdPreimageFromAddress,
+        CreateContractArgs, Error as XdrError, Hash, HashIdPreimage, HashIdPreimageContractId,
+        HostFunction, InvokeHostFunctionOp, Memo, MuxedAccount, Operation, OperationBody,
+        Preconditions, PublicKey, ScAddress, SequenceNumber, Transaction, TransactionExt, Uint256,
+        VecM, WriteXdr,
+    },
+    HostError,
 };
-use soroban_env_host::xdr::{
-    HashIdPreimageSourceAccountContractId, HostFunctionArgs, ScContractExecutable,
-    UploadContractWasmArgs,
-};
-use soroban_env_host::HostError;
 
 use crate::utils::client::Client;
 use crate::utils::constants::{NETWORK_PHRASE, NETWORK_URL};
@@ -164,13 +163,8 @@ pub(crate) fn build_install_contract_code_tx(
     let op = Operation {
         source_account: Some(MuxedAccount::Ed25519(Uint256(key.public.to_bytes()))),
         body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-            functions: vec![HostFunction {
-                args: HostFunctionArgs::UploadContractWasm(UploadContractWasmArgs {
-                    code: contract.try_into()?,
-                }),
-                auth: VecM::default(),
-            }]
-            .try_into()?,
+            host_function: HostFunction::UploadContractWasm(contract.try_into()?),
+            auth: VecM::default(),
         }),
     };
 
@@ -195,29 +189,24 @@ fn build_create_contract_tx(
     salt: [u8; 32],
     key: &ed25519_dalek::Keypair,
 ) -> Result<(Transaction, Hash), Error> {
-    let network_id = Hash(Sha256::digest(network_passphrase.as_bytes()).into());
-    let preimage =
-        HashIdPreimage::ContractIdFromSourceAccount(HashIdPreimageSourceAccountContractId {
-            network_id,
-            source_account: AccountId(PublicKey::PublicKeyTypeEd25519(
-                key.public.to_bytes().into(),
-            )),
-            salt: Uint256(salt),
-        });
-    let preimage_xdr = preimage.to_xdr()?;
-    let contract_id = Sha256::digest(preimage_xdr);
+    let source_account = AccountId(PublicKey::PublicKeyTypeEd25519(
+        key.public.to_bytes().into(),
+    ));
+
+    let contract_id_preimage = ContractIdPreimage::Address(ContractIdPreimageFromAddress {
+        address: ScAddress::Account(source_account),
+        salt: Uint256(salt),
+    });
+    let contract_id = get_contract_id(contract_id_preimage.clone(), network_passphrase)?;
 
     let op = Operation {
         source_account: None,
         body: OperationBody::InvokeHostFunction(InvokeHostFunctionOp {
-            functions: vec![HostFunction {
-                args: HostFunctionArgs::CreateContract(CreateContractArgs {
-                    contract_id: ContractId::SourceAccount(Uint256(salt)),
-                    executable: ScContractExecutable::WasmRef(hash),
-                }),
-                auth: VecM::default(),
-            }]
-            .try_into()?,
+            host_function: HostFunction::CreateContract(CreateContractArgs {
+                contract_id_preimage,
+                executable: ContractExecutable::Wasm(hash),
+            }),
+            auth: VecM::default(),
         }),
     };
     let tx = Transaction {
@@ -231,4 +220,21 @@ fn build_create_contract_tx(
     };
 
     Ok((tx, Hash(contract_id.into())))
+}
+
+fn get_contract_id(
+    contract_id_preimage: ContractIdPreimage,
+    network_passphrase: &str,
+) -> Result<Hash, Error> {
+    let network_id = Hash(
+        Sha256::digest(network_passphrase.as_bytes())
+            .try_into()
+            .unwrap(),
+    );
+    let preimage = HashIdPreimage::ContractId(HashIdPreimageContractId {
+        network_id,
+        contract_id_preimage,
+    });
+    let preimage_xdr = preimage.to_xdr()?;
+    Ok(Hash(Sha256::digest(preimage_xdr).into()))
 }

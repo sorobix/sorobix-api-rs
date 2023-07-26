@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use soroban_env_host::xdr::{
     DecoratedSignature, Error as XdrError, Hash, Signature, SignatureHint, Transaction,
     TransactionEnvelope, TransactionSignaturePayload, TransactionSignaturePayloadTaggedTransaction,
-    TransactionV1Envelope, UploadContractWasmArgs, WriteXdr,
+    TransactionV1Envelope, WriteXdr,
 };
 
 use stellar_strkey::ed25519::PrivateKey;
@@ -15,13 +15,8 @@ use crate::models::deploy_contract::RedisResponse;
 ///
 /// Might return an error
 pub fn contract_hash(contract: &[u8]) -> Result<Hash, XdrError> {
-    let args_xdr = UploadContractWasmArgs {
-        code: contract.try_into()?,
-    }
-    .to_xdr()?;
-    Ok(Hash(Sha256::digest(args_xdr).into()))
+    Ok(Hash(Sha256::digest(contract).into()))
 }
-
 /// # Errors
 ///
 /// Might return an error
