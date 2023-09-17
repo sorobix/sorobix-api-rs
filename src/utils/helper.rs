@@ -30,6 +30,22 @@ pub fn padded_hex_from_str(s: &String, n: usize) -> Result<Vec<u8>, FromHexError
 /// # Errors
 ///
 /// Might return an error
+pub fn contract_id_from_str(contract_id: &str) -> Result<[u8; 32], stellar_strkey::DecodeError> {
+    stellar_strkey::Contract::from_string(contract_id)
+        .map(|strkey| strkey.0)
+        .or_else(|_| {
+            // strkey failed, try to parse it as a hex string, for backwards compatibility.
+            soroban_spec_tools::utils::padded_hex_from_str(contract_id, 32)
+                .map_err(|_| stellar_strkey::DecodeError::Invalid)?
+                .try_into()
+                .map_err(|_| stellar_strkey::DecodeError::Invalid)
+        })
+        .map_err(|_| stellar_strkey::DecodeError::Invalid)
+}
+
+/// # Errors
+///
+/// Might return an error
 pub fn transaction_hash(tx: &Transaction, network_passphrase: &str) -> Result<[u8; 32], XdrError> {
     let signature_payload = TransactionSignaturePayload {
         network_id: Hash(Sha256::digest(network_passphrase).into()),

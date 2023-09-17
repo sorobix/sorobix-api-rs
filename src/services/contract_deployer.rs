@@ -44,7 +44,7 @@ pub enum Error {
     #[error("cannot parse WASM hash {wasm_hash}: {error}")]
     CannotParseWasmHash {
         wasm_hash: String,
-        error: FromHexError,
+        error: stellar_strkey::DecodeError,
     },
     #[error("Must provide either --wasm or --wash-hash")]
     WasmNotProvided,
@@ -87,9 +87,11 @@ impl ContractDeployer {
         };
 
         let hash = Hash(
-            id_from_str(&wasm_hash).map_err(|e| Error::CannotParseWasmHash {
-                wasm_hash: wasm_hash.clone(),
-                error: e,
+            crate::utils::helper::contract_id_from_str(&wasm_hash).map_err(|e| {
+                Error::CannotParseWasmHash {
+                    wasm_hash: wasm_hash.clone(),
+                    error: e,
+                }
             })?,
         );
         self.run_against_rpc_server(hash).await
@@ -97,14 +99,17 @@ impl ContractDeployer {
 
     async fn run_against_rpc_server(&self, wasm_hash: Hash) -> Result<String, Error> {
         let salt: [u8; 32] = match &self.salt {
-            // Hack: re-use contract_id_from_str to parse the 32-byte salt hex.
-            Some(h) => id_from_str(h).map_err(|_| Error::CannotParseSalt { salt: h.clone() })?,
+            Some(h) => soroban_spec_tools::utils::padded_hex_from_str(h, 32)
+                .map_err(|_| Error::CannotParseSalt { salt: h.clone() })?
+                .try_into()
+                .map_err(|_| Error::CannotParseSalt { salt: h.clone() })?,
             None => rand::thread_rng().gen::<[u8; 32]>(),
         };
 
-        //todo: insert netwokr url
         let client = Client::new(NETWORK_URL)?;
-        // generate new public keypair
+        // client
+        //     .verify_network_passphrase(Some(NETWORK_PHRASE))
+        //     .await?;
         let key = &self.keypair;
 
         // Get the account sequence number
@@ -121,11 +126,9 @@ impl ContractDeployer {
             &key,
         )?;
         client
-            .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, None)
+            .prepare_and_send_transaction(&tx, &key, &[], &NETWORK_PHRASE, None, None)
             .await?;
-
-        let gg = hex::encode(contract_id.0);
-        Ok(gg)
+        Ok(stellar_strkey::Contract(contract_id.0).to_string())
     }
 
     pub async fn run_and_get_hash(&self, contract: Vec<u8>) -> Result<Hash, Error> {
@@ -145,7 +148,7 @@ impl ContractDeployer {
         let (tx, hash) =
             build_install_contract_code_tx(contract.clone(), sequence + 1, self.fee.fee, &key)?;
         client
-            .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, None)
+            .prepare_and_send_transaction(&tx, &key, &[], &NETWORK_PHRASE, None, None)
             .await?;
 
         Ok(hash)

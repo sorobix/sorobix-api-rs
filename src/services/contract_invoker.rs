@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::{convert::TryInto, num::ParseIntError};
 
 use std::{fmt::Debug, io};
@@ -6,6 +7,7 @@ use std::{fmt::Debug, io};
 use ed25519_dalek::Keypair;
 use heck::ToKebabCase;
 use hex::FromHexError;
+use soroban_env_host::xdr::{InvokeContractArgs, SorobanResources};
 use soroban_env_host::{
     budget::Budget,
     events::HostEvent,
@@ -84,6 +86,8 @@ pub enum Error {
     MissingArgument(String),
     #[error("Contract Error\n{0}: {1}")]
     ContractInvoke(String, String),
+    #[error("")]
+    MissingFileArg(PathBuf),
 }
 
 pub struct ContractInvokerService {}
@@ -124,7 +128,7 @@ impl ContractInvoker {
         &self,
         contract_id: [u8; 32],
         spec_entries: &[ScSpecEntry],
-    ) -> Result<(String, Spec, ScVec), Error> {
+    ) -> Result<(String, Spec, InvokeContractArgs, Vec<Keypair>), Error> {
         let spec = Spec(Some(spec_entries.to_vec()));
         let mut cmd = clap::Command::new(self.contract.clone())
             .ignore_errors(true)
@@ -141,19 +145,15 @@ impl ContractInvoker {
 
         let func = spec.find_function(function)?;
         // create parsed_args in same order as the inputs to func
+        let mut signers: Vec<Keypair> = vec![];
         let parsed_args = func
             .inputs
             .iter()
             .map(|i| {
-                let name = i.name.to_string()?;
-                if let Some(mut raw_val) = matches_.get_raw(&name) {
-                    let s = raw_val
-                        .next()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .to_string();
-                    // TODO: this is not random uncommented code, this is address parsing, cannot input
-                    // address yet
+                let name = i.name.to_string().unwrap();
+                if let Some(mut val) = matches_.get_raw(&name) {
+                    let mut s = val.next().unwrap().to_string_lossy().to_string();
+                    // TODO: cannot input address yet
                     // if matches!(i.type_, ScSpecTypeDef::Address) {
                     //     let cmd = crate::commands::config::identity::address::Cmd {
                     //         name: Some(s.clone()),
@@ -163,39 +163,61 @@ impl ContractInvoker {
                     //     if let Ok(address) = cmd.public_key() {
                     //         s = address.to_string();
                     //     }
+                    //     if let Ok(key) = cmd.private_key() {
+                    //         signers.push(key);
+                    //     }
                     // }
                     spec.from_string(&s, &i.type_)
                         .map_err(|error| Error::CannotParseArg { arg: name, error })
                 } else if matches!(i.type_, ScSpecTypeDef::Option(_)) {
                     Ok(ScVal::Void)
+                } else if let Some(arg_path) =
+                    matches_.get_one::<PathBuf>(&fmt_arg_file_name(&name))
+                {
+                    if matches!(i.type_, ScSpecTypeDef::Bytes | ScSpecTypeDef::BytesN(_)) {
+                        Ok(ScVal::try_from(
+                            &std::fs::read(arg_path)
+                                .map_err(|_| Error::MissingFileArg(arg_path.clone()))?,
+                        )
+                        .unwrap())
+                    } else {
+                        let file_contents = std::fs::read_to_string(arg_path)
+                            .map_err(|_| Error::MissingFileArg(arg_path.clone()))?;
+                        tracing::debug!(
+                            "file {arg_path:?}, has contents:\n{file_contents}\nAnd type {:#?}\n{}",
+                            i.type_,
+                            file_contents.len()
+                        );
+                        spec.from_string(&file_contents, &i.type_)
+                            .map_err(|error| Error::CannotParseArg { arg: name, error })
+                    }
                 } else {
                     Err(Error::MissingArgument(name))
                 }
             })
             .collect::<Result<Vec<_>, Error>>()?;
 
-        // Add the contract ID and the function name to the arguments
-        let mut complete_args = vec![
-            ScVal::Address(ScAddress::Contract(Hash(contract_id))),
-            ScVal::Symbol(
-                function
-                    .try_into()
-                    .map_err(|_| Error::FunctionNameTooLong(function.clone()))?,
-            ),
-        ];
-        complete_args.extend_from_slice(parsed_args.as_slice());
-        let complete_args_len = complete_args.len();
+        let contract_address_arg = ScAddress::Contract(Hash(contract_id));
+        let function_symbol_arg = function
+            .try_into()
+            .map_err(|_| Error::FunctionNameTooLong(function.clone()))?;
 
-        Ok((
-            function.clone(),
-            spec,
-            complete_args
+        let final_args =
+            parsed_args
+                .clone()
                 .try_into()
                 .map_err(|_| Error::MaxNumberOfArgumentsReached {
-                    current: complete_args_len,
+                    current: parsed_args.len(),
                     maximum: ScVec::default().max_len(),
-                })?,
-        ))
+                })?;
+
+        let invoke_args = InvokeContractArgs {
+            contract_address: contract_address_arg,
+            function_name: function_symbol_arg,
+            args: final_args,
+        };
+
+        Ok((function.clone(), spec, invoke_args, signers))
     }
 
     pub fn read_wasm(&self) -> Result<Option<Vec<u8>>, Error> {
@@ -216,6 +238,7 @@ impl ContractInvoker {
         let contract_id = self.contract_id()?;
         let client = Client::new(network)?;
         let key = &self.keypair;
+        let passpharse = crate::utils::constants::NETWORK_PHRASE;
 
         // Get the account sequence number
         let public_strkey = stellar_strkey::ed25519::PublicKey(key.public.to_bytes()).to_string();
@@ -230,7 +253,7 @@ impl ContractInvoker {
         };
 
         // Get the ledger footprint
-        let (function, spec, host_function_params) =
+        let (function, spec, host_function_params, signers) =
             self.build_host_function_parameters(contract_id, &spec_entries)?;
         let tx = build_invoke_contract_tx(
             host_function_params.clone(),
@@ -240,14 +263,15 @@ impl ContractInvoker {
         )?;
 
         let (result, meta, events) = client
-            .prepare_and_send_transaction(&tx, &key, &NETWORK_PHRASE, Some(log_events))
+            .prepare_and_send_transaction(&tx, &key, &signers, passpharse, Some(log_events), None)
             .await?;
 
         tracing::debug!(?result);
-        if !events.is_empty() {
-            tracing::debug!(?events);
-        }
-        let xdr::TransactionMeta::V3(xdr::TransactionMetaV3{soroban_meta: Some(xdr::SorobanTransactionMeta{return_value, ..}), ..}) = meta else {
+        let xdr::TransactionMeta::V3(xdr::TransactionMetaV3 {
+            soroban_meta: Some(xdr::SorobanTransactionMeta { return_value, .. }),
+            ..
+        }) = meta
+        else {
             return Err(Error::MissingOperationResult);
         };
 
@@ -270,10 +294,10 @@ pub fn output_to_string(spec: &Spec, res: &ScVal, function: &str) -> Result<Stri
 }
 
 fn build_invoke_contract_tx(
-    parameters: ScVec,
+    parameters: InvokeContractArgs,
     sequence: i64,
     fee: u32,
-    key: &ed25519_dalek::Keypair,
+    key: &Keypair,
 ) -> Result<Transaction, Error> {
     let op = Operation {
         source_account: None,
@@ -352,4 +376,11 @@ fn build_custom_cmd(name: &str, spec: &Spec) -> Result<clap::Command, Error> {
         cmd = cmd.arg(arg);
     }
     Ok(cmd)
+}
+
+fn fmt_arg_file_name(name: &str) -> String {
+    format!("{name}-file-path")
+}
+fn log_resources(resources: &SorobanResources) {
+    crate::log::coster::cost(resources);
 }

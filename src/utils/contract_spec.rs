@@ -1,11 +1,13 @@
+use base64::{engine::general_purpose::STANDARD as base64, Engine as _};
 use std::{
     fmt::Display,
     io::{self, Cursor},
 };
 
 use soroban_env_host::xdr::{
-    self, ReadXdr, ScEnvMetaEntry, ScMetaEntry, ScMetaV0, ScSpecEntry, ScSpecFunctionV0,
-    ScSpecUdtEnumV0, ScSpecUdtErrorEnumV0, ScSpecUdtStructV0, ScSpecUdtUnionV0, StringM,
+    self, DepthLimitedRead, ReadXdr, ScEnvMetaEntry, ScMetaEntry, ScMetaV0, ScSpecEntry,
+    ScSpecFunctionV0, ScSpecUdtEnumV0, ScSpecUdtErrorEnumV0, ScSpecUdtStructV0, ScSpecUdtUnionV0,
+    StringM, WriteXdr,
 };
 
 pub struct ContractSpec {
@@ -56,27 +58,33 @@ impl ContractSpec {
 
         let mut env_meta_base64 = None;
         let env_meta = if let Some(env_meta) = env_meta {
-            env_meta_base64 = Some(base64::encode(env_meta));
-            let mut cursor = Cursor::new(env_meta);
-            ScEnvMetaEntry::read_xdr_iter(&mut cursor).collect::<Result<Vec<_>, xdr::Error>>()?
+            env_meta_base64 = Some(base64.encode(env_meta));
+            let cursor = Cursor::new(env_meta);
+            let mut depth_limit_read = DepthLimitedRead::new(cursor, 100);
+            ScEnvMetaEntry::read_xdr_iter(&mut depth_limit_read)
+                .collect::<Result<Vec<_>, xdr::Error>>()?
         } else {
             vec![]
         };
 
         let mut meta_base64 = None;
         let meta = if let Some(meta) = meta {
-            meta_base64 = Some(base64::encode(meta));
-            let mut cursor = Cursor::new(meta);
-            ScMetaEntry::read_xdr_iter(&mut cursor).collect::<Result<Vec<_>, xdr::Error>>()?
+            meta_base64 = Some(base64.encode(meta));
+            let cursor = Cursor::new(meta);
+            let mut depth_limit_read = DepthLimitedRead::new(cursor, 100);
+            ScMetaEntry::read_xdr_iter(&mut depth_limit_read)
+                .collect::<Result<Vec<_>, xdr::Error>>()?
         } else {
             vec![]
         };
 
         let mut spec_base64 = None;
         let spec = if let Some(spec) = spec {
-            spec_base64 = Some(base64::encode(spec));
-            let mut cursor = Cursor::new(spec);
-            ScSpecEntry::read_xdr_iter(&mut cursor).collect::<Result<Vec<_>, xdr::Error>>()?
+            spec_base64 = Some(base64.encode(spec));
+            let cursor = Cursor::new(spec);
+            let mut depth_limit_read = DepthLimitedRead::new(cursor, 100);
+            ScSpecEntry::read_xdr_iter(&mut depth_limit_read)
+                .collect::<Result<Vec<_>, xdr::Error>>()?
         } else {
             vec![]
         };
@@ -89,6 +97,16 @@ impl ContractSpec {
             spec_base64,
             spec,
         })
+    }
+
+    pub fn spec_as_json_array(&self) -> Result<String, Error> {
+        let spec = self
+            .spec
+            .iter()
+            .map(|e| Ok(format!("\"{}\"", e.to_xdr_base64()?)))
+            .collect::<Result<Vec<_>, Error>>()?
+            .join(",\n");
+        Ok(format!("[{spec}]"))
     }
 }
 

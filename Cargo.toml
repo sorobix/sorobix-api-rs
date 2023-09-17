@@ -13,15 +13,15 @@ reqwest = { version = "0.11.14", features = ["json"] }
 serde = { version = "1.0.82", features = ["derive"] }
 serde_json = "1.0.82"
 tokio = { version = "1.0", features = ["full"] }
-soroban-env-host = { version = "0.0.17" }
+soroban-env-host = { version = "20.0.0-rc1" }
 rand = "0.7.0"
 hex = "0.4.3"
 sha2 = "0.10.6"
 ed25519-dalek = "1.0.1"
-soroban-spec = "0.9.1"
-soroban-ledger-snapshot = "0.9.1"
+soroban-spec = "20.0.0-rc1"
+soroban-ledger-snapshot = "20.0.0-rc1"
 stellar-strkey = "0.0.7"
-soroban-sdk = "0.9.1"
+soroban-sdk = "20.0.0-rc1"
 thiserror = "1.0.31"
 itertools = "0.10.5"
 jsonrpsee-http-client = "0.15.1"
@@ -33,7 +33,7 @@ tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 tracing-appender = "0.2.2"
 wasmparser = "0.90.0"
-base64 = "0.13.0"
+base64 = "0.21.2"
 redis = "0.23.0"
 clap = { version = "4.1.8", features = [
     "derive",
@@ -43,6 +43,6 @@ clap = { version = "4.1.8", features = [
 ] }
 clap_complete = "4.1.4"
 heck = "0.4.1"
-soroban-spec-json = "0.9.1"
-soroban-spec-rust = "0.9.2"
-soroban-spec-tools = "0.9.1"
+soroban-spec-json = "20.0.0-rc1"
+soroban-spec-rust = "20.0.0-rc1"
+soroban-spec-tools = "20.0.0-rc1"
