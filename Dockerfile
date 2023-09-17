@@ -1,4 +1,4 @@
-FROM rust:latest
+FROM rust:1.72
 WORKDIR /sorobix-api-rs
 COPY . .
 RUN cargo build --release
