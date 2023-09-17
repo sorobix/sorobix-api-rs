@@ -24,6 +24,7 @@ use soroban_env_host::{
 use soroban_sdk::token;
 use soroban_spec::read::FromWasmError;
 use soroban_spec_tools::Spec;
+use stellar_strkey::DecodeError;
 
 use crate::models;
 use crate::utils::client::Client;
@@ -31,6 +32,8 @@ use crate::utils::constants::{NETWORK_PHRASE, NETWORK_URL};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("cannot parse contract ID {0}: {1}")]
+    CannotParseContractId(String, DecodeError),
     #[error("parsing argument {arg}: {error}")]
     CannotParseArg {
         arg: String,
@@ -46,11 +49,6 @@ pub enum Error {
     CannotReadContractFile {
         filepath: std::path::PathBuf,
         error: io::Error,
-    },
-    #[error("cannot parse contract ID {contract_id}: {error}")]
-    CannotParseContractId {
-        contract_id: String,
-        error: FromHexError,
     },
     #[error("function {0} was not found in the contract")]
     FunctionNotFoundInContractSpec(String),
@@ -225,12 +223,8 @@ impl ContractInvoker {
     }
 
     fn contract_id(&self) -> Result<[u8; 32], Error> {
-        crate::utils::helper::id_from_str(&self.contract).map_err(|e| {
-            Error::CannotParseContractId {
-                contract_id: self.contract.clone(),
-                error: e,
-            }
-        })
+        crate::utils::helper::contract_id_from_str(&self.contract)
+            .map_err(|e| Error::CannotParseContractId(self.contract.clone(), e))
     }
 
     pub async fn run_against_rpc_server(&self) -> Result<String, Error> {
